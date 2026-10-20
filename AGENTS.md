@@ -961,3 +961,24 @@ traza y el vídeo solo de los escenarios que fallan, en `tests/e2e/results/`. La
 ## Instrucciones del proyecto
 
 Lo específico de este repositorio: comandos de verificación, convenciones propias, decisiones de arquitectura.
+
+- **Qué es**: la landing de Prana & Nutrición (Cuautla, Morelos, México). HTML estático en `web/public/`, sin
+  backend, API ni base de datos. Por eso no hay suites de API ni de base de datos, ni check `Base de datos`.
+- **Idioma**: solo español de México, tuteando («Agenda tu consulta»). `<html lang="es">`, `og:locale` `es_MX`.
+  Sin catálogos de traducción mientras haya un solo idioma (sección 9.1 y las reglas I18N no aplican).
+- **Estilos**: Tailwind CSS 4, compilado en el build (`npm run build`, o `npm run dev` mientras se edita). El
+  tema (colores y fuentes) está en `web/src/styles.css`; el CSS generado no se versiona.
+- **Nada de terceros en el navegador**: fuentes (Outfit y Playfair Display, OFL), iconos (sprite
+  `web/public/assets/iconos.svg` de Font Awesome Free, CC BY 4.0) e imágenes (WebP) se sirven desde el propio
+  dominio. La CSP del gateway solo permite el dominio y Umami. Un icono nuevo se añade al sprite desde
+  `@fortawesome/fontawesome-free` con su `<symbol id>` y su `viewBox`.
+- **JavaScript**: `web/public/assets/main.js`, sin dependencias: navegación, menú móvil y formulario. El CSS y
+  el JS llevan huella en el nombre al construir la imagen (web/Dockerfile) y se guardan en caché un año.
+- **Formulario de contacto**: no envía nada al servidor; abre WhatsApp (`wa.me/527772095094`) con el mensaje
+  ya escrito. Aplica §6.2 y §6.3 (nombre 50, teléfono 20 y de 8 a 15 dígitos, mensaje 2000 con contador). El
+  teléfono no se valida con libphonenumber: no se guarda ni se procesa, solo viaja en el texto de WhatsApp.
+- **Imágenes**: cada una en 640 y 1024 px (`cwebp -q 78 -resize <ancho> 0`), con `srcset`, `width`/`height` y
+  `loading="lazy"` fuera de la primera pantalla. `assets/img/og.jpg` (1200×630) es la de redes sociales.
+- **Pendiente del cliente**: el contraste de la paleta (blanco sobre `rose` y texto `roseGold`) no llega a
+  WCAG AA; el escenario de axe de la portada está `@pendiente` hasta que se decida. Los textos legales
+  (`/privacidad`, `/condiciones`) necesitan la razón social y una revisión legal (WEB-03).

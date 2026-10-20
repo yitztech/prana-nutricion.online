@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://prana-nutricion.online/sitemap.xml
