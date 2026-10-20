@@ -1,21 +1,48 @@
-# Plantilla de web de cliente
+# prana-nutricion.online
 
-Repositorio plantilla de **yitztech**. El alta de cada cliente
-([infra-ionos-vps](https://github.com/yprevot/infra-ionos-vps), playbook `cliente-alta`, fase `repo`)
-crea el repositorio del cliente a partir de este, y la fase `web` lo conecta con Coolify.
+Web de **Prana & Nutrición**, clínica de belleza integral en Cuautla, Morelos: nutrición moldeadora, cuidado
+de la piel y recuperación postoperatoria. Una landing estática en español, con aviso de privacidad,
+condiciones de uso y un formulario que abre WhatsApp con el mensaje ya escrito.
 
-Se despliega en modo **imágenes**: GitHub Actions construye y publica en GHCR, y Coolify solo descarga y
-arranca. El servidor nunca compila.
+Creado desde la plantilla de **yitztech** por el alta de clientes
+([infra-ionos-vps](https://github.com/yprevot/infra-ionos-vps), playbook `cliente-alta`, ficha
+`clientes/prana-nutricion.yml`). Se despliega en modo **imágenes**: GitHub Actions construye y publica en
+GHCR, y Coolify (VPS1) solo descarga y arranca. El servidor nunca compila.
 
 ```
-AGENTS.md, CLAUDE.md      # estándares de desarrollo (frontend y backend) para personas y agentes
-compose.prod.yml          # producción en Coolify: gateway + web (+ PostgreSQL comentado)
+AGENTS.md, CLAUDE.md      # estándares de desarrollo; lo propio del proyecto, al final de AGENTS.md
+compose.prod.yml          # producción en Coolify: gateway + web
+compose.ci.yml            # pruebas: el mismo compose con el gateway en 127.0.0.1:8091
 nginx/nginx.conf          # nginx sin root y de solo lectura, común a gateway y web
 gateway/                  # nginx delante de todo: IP real, cabeceras, X-Request-ID, /version.json, Umami
-web/                      # página "Próximamente": sustituir por la aplicación del cliente
-.github/workflows/deploy.yml   # verificar → publicar en GHCR → webhook de Coolify → comprobar el SHA servido
-.github/scripts/reglas-compose.sh   # reglas de la plataforma sobre el compose (las usa `Verificar`)
+web/
+  src/styles.css          # Tailwind CSS 4: tema (colores, fuentes) y utilidades propias
+  public/                 # la web: index.html, privacidad.html, condiciones.html, 404.html, robots, sitemap
+    assets/               # main.js, iconos.svg, fuentes/ e img/ (WebP)
+  Dockerfile              # compila el CSS (Node) y sirve con nginx
+tests/e2e/                # escenarios en Gherkin (playwright-bdd): plataforma/ y landing/
+scripts/                  # test-all.mjs (npm test) y check-audit.mjs (npm audit con excepciones)
+.github/workflows/
+  deploy.yml              # Verificar, Escenarios y Seguridad → publicar en GHCR → Coolify → comprobar el SHA
+  semanal.yml             # Firefox, Trivy y humo contra producción, cada lunes
 ```
+
+## Desarrollo
+
+Node 24.22 (`.nvmrc`) y Docker.
+
+```bash
+npm ci
+npm run dev        # recompila el CSS al guardar; abrir web/public con cualquier servidor estático
+npm test           # construye las imágenes, levanta el compose y ejecuta todos los escenarios
+npm run e2e -- --grep @smoke    # solo los imprescindibles
+npm run e2e:ver    # una ventana, escenario a escenario y a ritmo humano
+npm run e2e:summary
+```
+
+La web en local, tal como se publica: `docker compose -f compose.prod.yml -f compose.ci.yml up -d --wait`
+(con `IMAGE_PREFIX=local/ci IMAGE_TAG=ci TRUSTED_PROXY_CIDR=127.0.0.1/32` y las imágenes construidas, como hace
+`npm test`) y abrir http://127.0.0.1:8091.
 
 ## Reglas de la plataforma
 
@@ -32,41 +59,26 @@ web/                      # página "Próximamente": sustituir por la aplicació
 
 Las reglas completas, y cómo se auditan, están en `docs/AUDITORIA.md` de infra-ionos-vps.
 
-## CI: `Verificar` antes de publicar
+## CI
 
-Cada PR y cada push a `main` pasan por el job **`Verificar`**, el check que exige la regla de `main`:
+Cada PR y cada push a `main` pasan por tres checks, los que exige la regla de `main`; solo si pasan, `main`
+publica en GHCR y despliega:
 
-1. hadolint sobre los Dockerfile;
-2. [`reglas-compose.sh`](.github/scripts/reglas-compose.sh): `mem_limit`, sin `ports:` ni `build:`, sin
-   `privileged` ni montajes del servidor, `read_only`, `cap_drop: [ALL]`, `no-new-privileges`, `healthcheck` y
-   logs rotados en cada servicio;
-3. prueba de humo: el compose de producción con las imágenes recién construidas (`/healthz`, `/version.json`,
-   cabeceras de seguridad, ningún servicio como root);
-4. Trivy sobre cada imagen: falla con vulnerabilidades `CRITICAL` o `HIGH` que tengan arreglo.
+1. **`Verificar`**: `npm ci`, build del CSS, `npm run check:audit`, hadolint,
+   [`reglas-compose.sh`](.github/scripts/reglas-compose.sh), prueba de humo con el compose de producción
+   (`/healthz`, `/version.json`, cabeceras, ningún servicio como root) y Trivy sobre cada imagen.
+2. **`Escenarios`**: `npm run e2e` contra esas imágenes, en Chromium, Pixel 7 e iPhone 15 emulados.
+3. **`Seguridad`**: CodeQL (JavaScript y Actions) y ZAP pasivo.
 
-Solo si pasa, `main` publica en GHCR y despliega. Al añadir servicios o pruebas de la app (lint, tipos, pruebas
-de extremo a extremo), van en este mismo job; las variables obligatorias nuevas del compose, con valores de
-prueba, en el `env:` del workflow. Las acciones de terceros van fijadas por commit.
+Las acciones de terceros van fijadas por commit. Lo que la plataforma pone en el entorno `production`
+(`COOLIFY_WEBHOOK`, `COOLIFY_TOKEN`, `SITE_URL`) lo gestiona el alta: no se crea a mano.
 
-## Después de crear el repo
+## Contrato con la plataforma
 
-1. **Paquetes de GHCR**: el primer push a `main` publica `<repo>-gateway` y `<repo>-web`. GitHub los crea
-   privados, y así pueden quedarse: el alta hace `docker login ghcr.io` en el servidor.
-2. **`TRUSTED_PROXY_CIDR`**: tras el primer arranque, medir la subred de Traefik en la red de la app y ponerla en
-   la ficha del cliente (infra-ionos-vps, `docs/OPERACION.md` §4.3).
-3. **La aplicación**: sustituir `web/` por la aplicación real. Si escucha en otro puerto o hay más servicios
-   (API, panel), ajustar los `upstream` y las `location` de `gateway/default.conf.template`. Las variables que
-   pone el alta (`SMTP_*`, `MAIL_FROM`, `LISTMONK_*`, `UMAMI_*`, `SITE_URL`) se añaden al `environment` del
-   servicio que las use. Los secretos (`POSTGRES_PASSWORD`, claves de la app) se declaran en la ficha con
-   `cliente_web_env_secretos` y el alta los genera.
-
-## Probar en local
-
-```bash
-docker build -f gateway/Dockerfile -t prueba-gateway .
-docker build -f web/Dockerfile -t prueba-web .
-docker network create prueba
-docker run -d --rm --name web --network prueba --read-only --tmpfs /tmp prueba-web
-docker run --rm -p 8080:80 --network prueba --read-only --tmpfs /tmp -e TRUSTED_PROXY_CIDR=127.0.0.1/32 prueba-gateway
-# http://localhost:8080
-```
+- **Variables** que pone el alta: `SITE_URL`, `SMTP_*`, `MAIL_FROM`, `LISTMONK_*`, `UMAMI_*`. Hoy la web solo
+  usa `UMAMI_SCRIPT_URL` y `UMAMI_WEBSITE_ID` (el gateway inserta el script de Umami). Un secreto nuevo se
+  declara en la ficha con `cliente_web_env_secretos`.
+- **`TRUSTED_PROXY_CIDR`**: la subred de Traefik en la red de la app, medida tras el primer arranque
+  (`docs/OPERACION.md` §4.3 de infra-ionos-vps) y fijada en la ficha.
+- **Correo** `contacto@prana-nutricion.online` (con `info@` y `hola@`) en el Stalwart de la plataforma, y
+  newsletter en `https://news.prana-nutricion.online` (Listmonk), aunque la web aún no los usa.

@@ -6,3 +6,7 @@
 **/node_modules
 **/.DS_Store
 *.md
+# Pruebas y scripts: no entran en ninguna imagen
+tests/
+scripts/
+compose*.yml

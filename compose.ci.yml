@@ -1,0 +1,7 @@
+# Entorno de pruebas sobre compose.prod.yml (AGENTS.md §35): las mismas imágenes que se publican,
+# con el gateway en un puerto local (E2E_PUERTO, 8091 por defecto).
+#   docker compose -f compose.prod.yml -f compose.ci.yml up -d --wait
+services:
+  gateway:
+    ports:
+      - "127.0.0.1:${E2E_PUERTO:-8091}:80"

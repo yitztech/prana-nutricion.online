@@ -1,0 +1,102 @@
+# Revisión semanal (AGENTS.md §40): los escenarios en Firefox, Trivy de dependencias y secretos, y los
+# escenarios @smoke @solo-lectura contra producción. Si algo falla, se abre (o se comenta) un issue
+# para que no pase desapercibido. CodeQL corre en cada PR (job Seguridad de deploy.yml).
+name: Semanal
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+
+env:
+  IMAGE_PREFIX: local/ci
+  IMAGE_TAG: ci
+  TRUSTED_PROXY_CIDR: 127.0.0.1/32
+
+jobs:
+  firefox:
+    name: Escenarios en Firefox
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps firefox
+      - name: Construir y levantar
+        run: |
+          docker build -q -f gateway/Dockerfile --build-arg RELEASE_SHA=${{ github.sha }} -t "$IMAGE_PREFIX-gateway:$IMAGE_TAG" .
+          docker build -q -f web/Dockerfile -t "$IMAGE_PREFIX-web:$IMAGE_TAG" .
+          docker compose -f compose.prod.yml -f compose.ci.yml up -d --no-build --wait --wait-timeout 120
+      - run: npm run e2e -- --project=firefox
+        env:
+          E2E_FIREFOX: "1"
+      - run: npm run e2e:summary
+        if: always()
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: e2e-firefox
+          path: tests/e2e/results/
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml down -v
+        if: always()
+
+  seguridad:
+    name: Seguridad semanal
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Trivy de dependencias y secretos
+        run: |
+          docker run --rm -v "$PWD":/repo aquasec/trivy:0.76.0 fs --quiet --scanners vuln,secret \
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 /repo
+
+  produccion:
+    name: Humo en producción
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # Solo lo que no escribe datos: @smoke y @solo-lectura a la vez
+      - run: npm run e2e -- --project=chromium --grep "(?=.*@smoke)(?=.*@solo-lectura)"
+        env:
+          E2E_BASE_URL: ${{ vars.SITE_URL }}
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: e2e-produccion
+          path: tests/e2e/results/
+
+  avisar:
+    name: Avisar si falla
+    needs: [firefox, seguridad, produccion]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          titulo="Falló la revisión semanal"
+          numero=$(gh issue list --state open --search "in:title \"$titulo\"" --json number --jq '.[0].number')
+          cuerpo="La revisión semanal falló el $(date -u +%F): $RUN_URL"
+          if [ -n "$numero" ]; then
+            gh issue comment "$numero" --body "$cuerpo"
+          else
+            gh issue create --title "$titulo" --body "$cuerpo"
+          fi

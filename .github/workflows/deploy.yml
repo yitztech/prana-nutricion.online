@@ -1,9 +1,13 @@
 # Verifica cada cambio y, en main, publica las imágenes en GHCR y despliega en Coolify.
 #
-#   verificar (PR y main) → publicar (gateway y web) → desplegar (webhook de Coolify) → comprobar
+#   verificar, escenarios y seguridad (PR y main) → publicar (gateway y web)
+#     → desplegar (webhook de Coolify) → comprobar
 #
-# `Verificar` es el check que exige la regla de main: Dockerfiles, reglas del compose,
-# prueba de humo con las imágenes que se van a publicar y análisis de vulnerabilidades.
+# `Verificar`, `Escenarios` y `Seguridad` son los checks que exige la regla de main (AGENTS.md §40):
+# - Verificar: build del CSS, auditoría de npm, Dockerfiles, reglas del compose, prueba de humo con
+#   las imágenes que se van a publicar y análisis de vulnerabilidades.
+# - Escenarios: los escenarios web (tests/e2e) contra esas mismas imágenes.
+# - Seguridad: CodeQL y ZAP pasivo. La web no tiene API ni base de datos: no hay `Base de datos`.
 # El entorno `production` (secretos COOLIFY_WEBHOOK y COOLIFY_TOKEN, variable SITE_URL)
 # lo rellena el alta del cliente (infra-ionos-vps, playbook cliente-alta). Mientras no
 # exista, se publican las imágenes pero no se despliega.
@@ -42,6 +46,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: CSS
+        run: npm run build
+      # Falla con vulnerabilidades altas o críticas en las dependencias, salvo las excepciones
+      # documentadas y con fecha de revisión de scripts/check-audit.mjs (SEG-06)
+      - name: Auditoría de dependencias
+        run: npm run check:audit
 
       # Acciones de terceros fijadas por commit (la etiqueta se puede mover)
       - name: Dockerfile del gateway
@@ -123,9 +138,109 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
 
+  escenarios:
+    name: Escenarios
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Chromium y WebKit pesan: se reutilizan mientras no cambie la versión de Playwright
+      - id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-webkit-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium webkit
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium webkit
+      - uses: docker/setup-buildx-action@v4
+      # Las mismas imágenes que se publican (mismos Dockerfiles y caché)
+      - name: Construir gateway
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: gateway/Dockerfile
+          load: true
+          build-args: |
+            RELEASE_SHA=${{ github.sha }}
+          tags: ${{ env.IMAGE_PREFIX }}-gateway:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=gateway
+      - name: Construir web
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: web/Dockerfile
+          load: true
+          tags: ${{ env.IMAGE_PREFIX }}-web:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=web
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml up -d --no-build --wait --wait-timeout 120
+      - run: npm run e2e
+        env:
+          E2E_REVISION: ${{ github.sha }}
+      - run: npm run e2e:summary
+        if: always()
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: qa-evidence
+          path: tests/e2e/results/
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml down -v
+        if: always()
+
+  seguridad:
+    name: Seguridad
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          languages: javascript-typescript, actions
+          build-mode: none
+      - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+      - uses: docker/setup-buildx-action@v4
+      - name: Construir gateway
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: gateway/Dockerfile
+          load: true
+          build-args: |
+            RELEASE_SHA=${{ github.sha }}
+          tags: ${{ env.IMAGE_PREFIX }}-gateway:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=gateway
+      - name: Construir web
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: web/Dockerfile
+          load: true
+          tags: ${{ env.IMAGE_PREFIX }}-web:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=web
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml up -d --no-build --wait --wait-timeout 120
+      # Falla con las reglas en FAIL; los avisos quedan en el informe (artefacto zap_scan)
+      - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: http://localhost:8091
+          cmd_options: -I
+          allow_issue_writing: false
+          fail_action: true
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml down -v
+        if: always()
+
   publicar:
     name: Publicar ${{ matrix.name }}
-    needs: verificar
+    needs: [verificar, escenarios, seguridad]
     if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && !github.event.repository.is_template }}
     runs-on: ubuntu-latest
     permissions:
