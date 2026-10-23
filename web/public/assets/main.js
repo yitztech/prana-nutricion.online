@@ -64,6 +64,14 @@ function formulario() {
   };
   const contador = document.getElementById('wa-mensaje-contador');
   const estado = document.getElementById('wa-estado');
+  const continuar = document.getElementById('wa-continuar');
+
+  // Un enlace preparado antes de editar dejaría de representar lo que hay en los campos.
+  form.addEventListener('input', () => {
+    continuar.hidden = true;
+    continuar.removeAttribute('href');
+    estado.textContent = '';
+  });
 
   // origen: 'filtro' (carácter descartado, se queda a la vista) o 'validacion' (se borra al corregir)
   const error = (campo, texto, origen = 'validacion') => {
@@ -115,6 +123,7 @@ function formulario() {
   document.querySelectorAll('[data-servicio]').forEach((enlace) => {
     enlace.addEventListener('click', () => {
       campos.servicio.value = enlace.dataset.servicio;
+      campos.servicio.dispatchEvent(new Event('input', { bubbles: true }));
     });
   });
 
@@ -160,10 +169,20 @@ function formulario() {
       `*Servicio de Interés:* ${datos.servicio}`,
       `*Mensaje:* ${datos.mensaje}`,
     ].join('\n');
-    window.open(`https://wa.me/${WHATSAPP_DESTINO}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
-    estado.textContent = 'Abrimos WhatsApp con tu mensaje. Solo falta que lo envíes desde allí.';
-    form.reset();
-    contar();
+    const url = `https://wa.me/${WHATSAPP_DESTINO}?text=${encodeURIComponent(texto)}`;
+    if (continuar.getAttribute('href') === url) {
+      continuar.focus();
+      return;
+    }
+    continuar.href = url;
+    continuar.hidden = false;
+    estado.textContent = 'Tu mensaje está listo. Si WhatsApp no se abrió, usa «Continuar en WhatsApp». Envíalo desde allí.';
+    // Con noopener, null también puede indicar una apertura correcta. Conservamos siempre los datos.
+    try {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch {
+      estado.textContent = 'No pudimos abrir WhatsApp. Usa «Continuar en WhatsApp» para enviar tu mensaje.';
+    }
   });
 }
 

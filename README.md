@@ -21,7 +21,9 @@ web/
     assets/               # main.js, iconos.svg, fuentes/ e img/ (WebP)
   Dockerfile              # compila el CSS (Node) y sirve con nginx
 tests/e2e/                # escenarios en Gherkin (playwright-bdd): plataforma/ y landing/
-scripts/                  # test-all.mjs (npm test) y check-audit.mjs (npm audit con excepciones)
+tests/unit/               # node:test: auditoría, preparación local y configuración de Umami (sin Docker)
+scripts/                  # test-all.mjs, local-web.mjs y check-audit.mjs
+.github/scripts/imagenes-ci.sh # exporta/carga las imágenes verificadas, sus IDs y SBOM, con checksum
 .github/workflows/
   deploy.yml              # Verificar, Escenarios y Seguridad → publicar en GHCR → Coolify → comprobar el SHA
   semanal.yml             # Firefox, Trivy y humo contra producción, cada lunes
@@ -34,7 +36,10 @@ Node 24.22 (`.nvmrc`) y Docker.
 ```bash
 npm ci
 npm run dev        # recompila el CSS al guardar; abrir web/public con cualquier servidor estático
-npm test           # construye las imágenes, levanta el compose y ejecuta todos los escenarios
+npm test           # unitarias, reconstruye/recrea el compose y ejecuta los escenarios con su resumen
+npm test -- --reuse # reutiliza expresamente el compose saludable (puede contener código anterior)
+npm test -- --lista # muestra las suites; npm test -- unit o npm test -- e2e ejecuta solo una
+npm run test:unit  # sin Docker
 npm run e2e -- --grep @smoke    # solo los imprescindibles
 npm run e2e:ver    # una ventana, escenario a escenario y a ritmo humano
 npm run e2e:summary
@@ -43,6 +48,12 @@ npm run e2e:summary
 La web en local, tal como se publica: `docker compose -f compose.prod.yml -f compose.ci.yml up -d --wait`
 (con `IMAGE_PREFIX=local/ci IMAGE_TAG=ci TRUSTED_PROXY_CIDR=127.0.0.1/32` y las imágenes construidas, como hace
 `npm test`) y abrir http://127.0.0.1:8091.
+
+Sin `--reuse`, cada ejecución reconstruye y recrea los contenedores aunque ya estén saludables.
+`E2E_BASE_URL` mantiene el destino externo explícito: no construye ni modifica servicios locales.
+El formulario conserva los datos y ofrece «Continuar en WhatsApp» después del intento de apertura;
+preparar dos veces el mismo mensaje enfoca ese enlace y evita ventanas duplicadas. Si se edita un campo,
+se prepara de nuevo el mensaje al pulsar «Agendar Valoración».
 
 ## Reglas de la plataforma
 
@@ -64,11 +75,21 @@ Las reglas completas, y cómo se auditan, están en `docs/AUDITORIA.md` de infra
 Cada PR y cada push a `main` pasan por tres checks, los que exige la regla de `main`; solo si pasan, `main`
 publica en GHCR y despliega:
 
-1. **`Verificar`**: `npm ci`, build del CSS, `npm run check:audit`, hadolint,
+1. **`Verificar`**: `npm ci`, `npm run test:unit`, build del CSS, `npm run check:audit`, hadolint,
    [`reglas-compose.sh`](.github/scripts/reglas-compose.sh), prueba de humo con el compose de producción
    (`/healthz`, `/version.json`, cabeceras, ningún servicio como root) y Trivy sobre cada imagen.
 2. **`Escenarios`**: `npm run e2e` contra esas imágenes, en Chromium, Pixel 7 e iPhone 15 emulados.
 3. **`Seguridad`**: CodeQL (JavaScript y Actions) y ZAP pasivo.
+
+Solo `Verificar` construye las imágenes. Exporta `imagenes-verificadas` (tar de Docker, IDs, SBOM CycloneDX
+y checksums SHA-256); `Escenarios`, `Seguridad` y `Publicar` cargan ese artefacto y comprueban su integridad.
+`Publicar` cambia las etiquetas y hace push, sin build, y registra los digests de GHCR en el resumen. Las
+atestaciones de procedencia y SBOM se adjuntan al digest publicado con `actions/attest`, sin reconstrucción.
+El intercambio sigue el [patrón oficial de Docker para compartir imágenes entre jobs](https://docs.docker.com/build/ci/github-actions/share-image-jobs/).
+
+La portada ejecuta axe con todas las reglas aplicables salvo `color-contrast`, que tiene un escenario
+independiente `@pendiente` hasta aprobar la paleta. Las páginas legales mantienen la comprobación completa.
+Los resultados y límites de la comprobación local están en [la validación del cambio](docs/validacion-local.md).
 
 Las acciones de terceros van fijadas por commit. Lo que la plataforma pone en el entorno `production`
 (`COOLIFY_WEBHOOK`, `COOLIFY_TOKEN`, `SITE_URL`) lo gestiona el alta: no se crea a mano.
@@ -78,6 +99,9 @@ Las acciones de terceros van fijadas por commit. Lo que la plataforma pone en el
 - **Variables** que pone el alta: `SITE_URL`, `SMTP_*`, `MAIL_FROM`, `LISTMONK_*`, `UMAMI_*`. Hoy la web solo
   usa `UMAMI_SCRIPT_URL` y `UMAMI_WEBSITE_ID` (el gateway inserta el script de Umami). Un secreto nuevo se
   declara en la ficha con `cliente_web_env_secretos`.
+- **Umami**: ambas variables vacías desactivan la analítica. Si se activa, las dos son obligatorias:
+  `UMAMI_SCRIPT_URL=https://stats.yunitztech.com/script.js` y `UMAMI_WEBSITE_ID` con formato UUID.
+  Una configuración parcial o inválida impide el arranque del gateway.
 - **`TRUSTED_PROXY_CIDR`**: la subred de Traefik en la red de la app, medida tras el primer arranque
   (`docs/OPERACION.md` §4.3 de infra-ionos-vps) y fijada en la ficha.
 - **Correo** `contacto@prana-nutricion.online` (con `info@` y `hola@`) en el Stalwart de la plataforma, y

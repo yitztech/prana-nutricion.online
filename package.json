@@ -10,6 +10,7 @@
     "build": "tailwindcss -i web/src/styles.css -o web/public/assets/styles.css --minify",
     "dev": "tailwindcss -i web/src/styles.css -o web/public/assets/styles.css --watch",
     "test": "node scripts/test-all.mjs",
+    "test:unit": "node --test tests/unit/*.test.mjs",
     "e2e": "bddgen -c tests/e2e/playwright.config.js && playwright test -c tests/e2e/playwright.config.js",
     "e2e:headed": "npm run e2e -- --headed",
     "e2e:ui": "bddgen -c tests/e2e/playwright.config.js && playwright test -c tests/e2e/playwright.config.js --ui",

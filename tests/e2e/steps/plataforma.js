@@ -110,10 +110,24 @@ Then("no hay desplazamiento horizontal a {int} píxeles de ancho", async ({ page
 
 // ── Accesibilidad ────────────────────────────────────────────────
 
-Then("axe no encuentra infracciones graves ni críticas", async ({ page }) => {
-  const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+const axe = (page) => new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]);
+
+async function comprobarAxe(builder) {
+  const { violations } = await builder.analyze();
   const graves = violations
     .filter((v) => ["serious", "critical"].includes(v.impact))
     .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).slice(0, 5).join(", ")}`);
   expect(graves).toEqual([]);
+}
+
+Then("axe no encuentra infracciones graves ni críticas", async ({ page }) => {
+  await comprobarAxe(axe(page));
+});
+
+Then("axe no encuentra infracciones graves ni críticas salvo el contraste pendiente", async ({ page }) => {
+  await comprobarAxe(axe(page).disableRules(["color-contrast"]));
+});
+
+Then("axe no encuentra infracciones de contraste", async ({ page }) => {
+  await comprobarAxe(axe(page).withRules(["color-contrast"]));
 });

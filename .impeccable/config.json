@@ -1,0 +1,89 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "web/public/index.html"
+        ],
+        "createdAt": "2026-10-23T19:23:48.685Z",
+        "reason": "Plan aprobado y AGENTS.md: conservar la paleta; color-contrast tiene escenario independiente pendiente de aprobación del cliente"
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "web/public/index.html"
+        ],
+        "createdAt": "2026-10-23T19:23:48.797Z",
+        "reason": "Agente: degradado existente en el diseño aprobado; el plan autorizado solo corrige fiabilidad, sin rediseñar la identidad visual"
+      },
+      {
+        "rule": "clipped-overflow-container",
+        "value": "*",
+        "files": [
+          "web/public/index.html"
+        ],
+        "createdAt": "2026-10-23T19:23:48.908Z",
+        "reason": "Agente: overflow-x-hidden del documento contiene adornos existentes; navegación y menú se verifican en Chromium, Android y WebKit; sin cambio de diseño autorizado"
+      },
+      {
+        "rule": "all-caps-body",
+        "value": "*",
+        "files": [
+          "web/public/index.html"
+        ],
+        "createdAt": "2026-10-23T19:29:56.362Z",
+        "reason": "Agente: los dos avisos son rótulos cortos existentes (Clínica de Belleza Integral y Nuestra Filosofía), no pasajes de texto; comprobado contra HEAD"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "web/public/index.html"
+        ],
+        "createdAt": "2026-10-23T19:29:56.524Z",
+        "reason": "Agente: envolturas estructurales existentes; el relleno está en sus hijos (96 px en servicios y p-10/md:p-16 en contacto); comprobado contra HEAD"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "web/public/index.html"
+        ],
+        "createdAt": "2026-10-23T19:29:56.645Z",
+        "reason": "Agente: patron-cruces es un SVG decorativo en data URI a opacidad 0.1; no es una fotografía ni un recurso raster oculto; comprobado en CSS y navegador"
+      },
+      {
+        "rule": "tight-leading",
+        "value": "*",
+        "files": [
+          "web/public/index.html"
+        ],
+        "createdAt": "2026-10-23T19:29:56.759Z",
+        "reason": "Plan aprobado: conservar la tipografía existente; interlineado 1.0 en títulos y cita de 48 px ya presente en HEAD; cambiarla ampliaría el alcance de las siete correcciones de fiabilidad"
+      },
+      {
+        "rule": "kicker-above-heading",
+        "value": "*",
+        "files": [
+          "web/public/index.html"
+        ],
+        "createdAt": "2026-10-23T19:29:56.872Z",
+        "reason": "Plan aprobado: conservar los rótulos de la identidad existente; ambos preceden a esta sesión y no se autorizó rediseñar la portada"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "web/public/index.html"
+        ],
+        "createdAt": "2026-10-23T19:29:56.981Z",
+        "reason": "AGENTS.md y plan aprobado: conservar la paleta existente; fondo champagne rgb(250,246,242) del tema, sin cambios respecto de HEAD"
+      }
+    ]
+  }
+}

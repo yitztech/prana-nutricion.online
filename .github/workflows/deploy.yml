@@ -51,6 +51,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Pruebas unitarias
+        run: npm run test:unit
       - name: CSS
         run: npm run build
       # Falla con vulnerabilidades altas o críticas en las dependencias, salvo las excepciones
@@ -72,7 +74,7 @@ jobs:
         run: .github/scripts/reglas-compose.sh compose.prod.yml
 
       - uses: docker/setup-buildx-action@v4
-      # Mismas cachés que `publicar`: allí la build sale casi entera de la caché
+      # Única construcción: el resto de jobs carga estas imágenes desde un artefacto.
       - name: Construir gateway
         uses: docker/build-push-action@v7
         with:
@@ -121,6 +123,10 @@ jobs:
         run: docker compose -f compose.prod.yml logs --no-color; docker compose -f compose.prod.yml down -v
 
       # Falla con vulnerabilidades CRITICAL o HIGH que ya tengan arreglo
+      - name: Preparar la evidencia de las imágenes
+        env:
+          IMAGENES_DIR: ${{ runner.temp }}/imagenes-verificadas
+        run: mkdir -p "$IMAGENES_DIR"
       - name: Vulnerabilidades de gateway
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -129,6 +135,9 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
+          format: cyclonedx
+          scanners: vuln
+          output: ${{ runner.temp }}/imagenes-verificadas/gateway.cdx.json
       - name: Vulnerabilidades de web
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -137,9 +146,25 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
+          format: cyclonedx
+          scanners: vuln
+          output: ${{ runner.temp }}/imagenes-verificadas/web.cdx.json
+
+      - name: Exportar las imágenes verificadas
+        env:
+          IMAGENES_DIR: ${{ runner.temp }}/imagenes-verificadas
+        run: sh .github/scripts/imagenes-ci.sh guardar "$IMAGENES_DIR"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: imagenes-verificadas
+          path: ${{ runner.temp }}/imagenes-verificadas/
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
 
   escenarios:
     name: Escenarios
+    needs: verificar
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -159,26 +184,14 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
       - if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium webkit
-      - uses: docker/setup-buildx-action@v4
-      # Las mismas imágenes que se publican (mismos Dockerfiles y caché)
-      - name: Construir gateway
-        uses: docker/build-push-action@v7
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
-          context: .
-          file: gateway/Dockerfile
-          load: true
-          build-args: |
-            RELEASE_SHA=${{ github.sha }}
-          tags: ${{ env.IMAGE_PREFIX }}-gateway:${{ env.IMAGE_TAG }}
-          cache-from: type=gha,scope=gateway
-      - name: Construir web
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: web/Dockerfile
-          load: true
-          tags: ${{ env.IMAGE_PREFIX }}-web:${{ env.IMAGE_TAG }}
-          cache-from: type=gha,scope=web
+          name: imagenes-verificadas
+          path: ${{ runner.temp }}/imagenes-verificadas
+      - name: Cargar las imágenes verificadas
+        env:
+          IMAGENES_DIR: ${{ runner.temp }}/imagenes-verificadas
+        run: sh .github/scripts/imagenes-ci.sh cargar "$IMAGENES_DIR"
       - run: docker compose -f compose.prod.yml -f compose.ci.yml up -d --no-build --wait --wait-timeout 120
       - run: npm run e2e
         env:
@@ -195,6 +208,7 @@ jobs:
 
   seguridad:
     name: Seguridad
+    needs: verificar
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -208,25 +222,14 @@ jobs:
           languages: javascript-typescript, actions
           build-mode: none
       - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
-      - uses: docker/setup-buildx-action@v4
-      - name: Construir gateway
-        uses: docker/build-push-action@v7
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
-          context: .
-          file: gateway/Dockerfile
-          load: true
-          build-args: |
-            RELEASE_SHA=${{ github.sha }}
-          tags: ${{ env.IMAGE_PREFIX }}-gateway:${{ env.IMAGE_TAG }}
-          cache-from: type=gha,scope=gateway
-      - name: Construir web
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: web/Dockerfile
-          load: true
-          tags: ${{ env.IMAGE_PREFIX }}-web:${{ env.IMAGE_TAG }}
-          cache-from: type=gha,scope=web
+          name: imagenes-verificadas
+          path: ${{ runner.temp }}/imagenes-verificadas
+      - name: Cargar las imágenes verificadas
+        env:
+          IMAGENES_DIR: ${{ runner.temp }}/imagenes-verificadas
+        run: sh .github/scripts/imagenes-ci.sh cargar "$IMAGENES_DIR"
       - run: docker compose -f compose.prod.yml -f compose.ci.yml up -d --no-build --wait --wait-timeout 120
       # Falla con las reglas en FAIL; los avisos quedan en el informe (artefacto zap_scan)
       - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
@@ -246,42 +249,61 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: true
       matrix:
         include:
           - name: gateway
-            file: gateway/Dockerfile
-            build_args: |
-              RELEASE_SHA=${{ github.sha }}
           - name: web
-            file: web/Dockerfile
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: imagenes-verificadas
+          path: ${{ runner.temp }}/imagenes-verificadas
+      - name: Cargar las imágenes verificadas
+        env:
+          IMAGENES_DIR: ${{ runner.temp }}/imagenes-verificadas
+        run: sh .github/scripts/imagenes-ci.sh cargar "$IMAGENES_DIR"
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # GHCR exige minúsculas en el nombre de la imagen
-      - id: image
+      - name: Publicar sin reconstruir y registrar el digest
+        id: publicar
         env:
           REPOSITORY: ${{ github.repository }}
-        run: echo "name=ghcr.io/${REPOSITORY,,}-${{ matrix.name }}" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@v7
+          SERVICIO: ${{ matrix.name }}
+        run: |
+          imagen="ghcr.io/${REPOSITORY,,}-$SERVICIO"
+          origen="$IMAGE_PREFIX-$SERVICIO:$IMAGE_TAG"
+          docker image tag "$origen" "$imagen:$GITHUB_SHA"
+          docker image push "$imagen:$GITHUB_SHA"
+          digest=$(docker image inspect --format '{{json .RepoDigests}}' "$imagen:$GITHUB_SHA" |
+            jq -er --arg prefijo "$imagen@" '[.[] | select(startswith($prefijo))] | unique | if length == 1 then .[0] else error("Digest no disponible") end')
+          docker image tag "$origen" "$imagen:main"
+          docker image push "$imagen:main"
+          printf '%s\n' "$digest" >> "$GITHUB_STEP_SUMMARY"
+          printf 'name=%s\ndigest=%s\n' "$imagen" "${digest#*@}" >> "$GITHUB_OUTPUT"
+      # Se conserva la evidencia de procedencia y SBOM sin volver a construir la imagen.
+      - name: Atestar la procedencia
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
-          context: .
-          file: ${{ matrix.file }}
-          push: true
-          build-args: ${{ matrix.build_args }}
-          tags: |
-            ${{ steps.image.outputs.name }}:main
-            ${{ steps.image.outputs.name }}:${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
-          provenance: true
-          sbom: true
+          subject-name: ${{ steps.publicar.outputs.name }}
+          subject-digest: ${{ steps.publicar.outputs.digest }}
+          push-to-registry: true
+          create-storage-record: false
+      - name: Atestar el SBOM verificado
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-name: ${{ steps.publicar.outputs.name }}
+          subject-digest: ${{ steps.publicar.outputs.digest }}
+          sbom-path: ${{ runner.temp }}/imagenes-verificadas/${{ matrix.name }}.cdx.json
+          push-to-registry: true
+          create-storage-record: false
 
   desplegar:
     name: Desplegar en Coolify
