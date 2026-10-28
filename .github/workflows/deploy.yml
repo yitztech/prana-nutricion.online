@@ -23,6 +23,10 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  # Verificación nocturna (AUDITORIA SEG-08), escalonada entre proyectos por el tope de jobs de la organización:
+  # pruebas, ZAP y Trivy contra main, sin publicar ni desplegar
+  schedule:
+    - cron: "0 9 * * *"
 
 # Un PR nuevo cancela la verificación anterior del mismo PR; en main no se cancela nada
 concurrency:
@@ -228,11 +232,13 @@ jobs:
           tags: ${{ env.IMAGE_PREFIX }}-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha,scope=web
       - run: docker compose -f compose.prod.yml -f compose.ci.yml up -d --no-build --wait --wait-timeout 120
-      # Falla con las reglas en FAIL; los avisos quedan en el informe (artefacto zap_scan)
+      # Falla con cualquier aviso nuevo (AUDITORIA SEG-08); las excepciones, con su motivo, en
+      # tests/security/zap-reglas.tsv. El informe queda como artefacto zap_scan
       - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
           target: http://localhost:8091
-          cmd_options: -I
+          docker_name: ghcr.io/zaproxy/zaproxy:2.17.0
+          rules_file_name: tests/security/zap-reglas.tsv
           allow_issue_writing: false
           fail_action: true
       - run: docker compose -f compose.prod.yml -f compose.ci.yml down -v
@@ -241,7 +247,8 @@ jobs:
   publicar:
     name: Publicar ${{ matrix.name }}
     needs: [verificar, escenarios, seguridad]
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && !github.event.repository.is_template }}
+    # Ni en un PR ni en la verificación nocturna
+    if: ${{ github.event_name != 'pull_request' && github.event_name != 'schedule' && github.ref == 'refs/heads/main' && !github.event.repository.is_template }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
