@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
-import { PranaIcon } from "@/components/prana-icon";
+import { PranaIcon } from "@/components/PranaIcon";
 import { Button } from "@/components/ui/button";
-import { pillars } from "@/data/content";
+import { pillars } from "@/data/site";
 
 const srcSet = "/img/filosofia-960.webp 960w, /img/filosofia-1440.webp 1440w, /img/filosofia-1971.webp 1971w";
 
@@ -11,13 +11,13 @@ export function Philosophy() {
       <img
         src="/img/filosofia-1440.webp"
         srcSet={srcSet}
-        sizes="(min-width: 1024px) 80vw, 100vw"
+        sizes="(min-width: 1280px) 72rem, 100vw"
         alt=""
         width={1971}
         height={798}
         loading="lazy"
         decoding="async"
-        className="absolute inset-y-0 left-0 -z-10 hidden h-full w-full object-cover object-[75%_center] [mask-image:linear-gradient(to_right,black_75%,transparent)] md:block lg:w-[80%] lg:object-right"
+        className="absolute inset-y-0 left-0 -z-10 hidden h-full w-full object-cover object-[75%_center] [mask-image:linear-gradient(to_right,black_75%,transparent)] md:block xl:left-[max(0px,calc(50%-50rem))] xl:w-[min(calc(50vw+22rem),72rem)] xl:object-[right_top] xl:[mask-image:linear-gradient(to_right,transparent,black_10%,black_82%,transparent)]"
       />
       <img
         src="/img/fondo-1280.webp"
@@ -30,10 +30,10 @@ export function Philosophy() {
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 hidden bg-gradient-to-r from-[#fff8fb]/90 via-[#fff8fb]/50 to-transparent md:block lg:via-transparent lg:to-transparent lg:from-[#fff8fb]/70"
+        className="absolute inset-0 -z-10 hidden bg-gradient-to-r from-[#fff8fb]/90 via-[#fff8fb]/50 to-transparent md:block xl:via-transparent xl:to-transparent xl:from-[#fff8fb]/70"
       />
 
-      <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 md:py-20 lg:grid-cols-[1fr_20rem] lg:px-8">
+      <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 md:py-20 xl:grid-cols-[1fr_20rem] lg:px-8">
         <div className="max-w-md text-center md:text-left">
           <h2 id="nosotros-titulo" className="text-3xl leading-tight font-semibold sm:text-4xl">
             Más que estética,
@@ -56,7 +56,7 @@ export function Philosophy() {
           </Button>
         </div>
 
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
           {pillars.map((item) => (
             <li
               key={item.icon}

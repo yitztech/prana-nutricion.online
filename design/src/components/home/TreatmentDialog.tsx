@@ -1,6 +1,7 @@
 import { Check, Info } from "lucide-react";
-import { BookingButton } from "@/components/booking-button";
-import { PranaIcon } from "@/components/prana-icon";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { BookingButton } from "@/components/BookingButton";
+import { PranaIcon } from "@/components/PranaIcon";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { treatmentNotes, type Category } from "@/data/content";
+import { findCategory, treatmentNotes } from "@/data/treatments";
+import type { Category, TreatmentRef } from "@/types";
 import { cn } from "@/lib/utils";
 
 type TreatmentDialogProps = {
@@ -19,7 +21,7 @@ type TreatmentDialogProps = {
 };
 
 /** Ficha de los tratamientos de una categoría: descripción, posibles beneficios e información relevante. */
-export function TreatmentDialog({ category, selectedSlug, onSelect, onOpenChange }: TreatmentDialogProps) {
+function TreatmentDialog({ category, selectedSlug, onSelect, onOpenChange }: TreatmentDialogProps) {
   const treatment =
     category?.treatments.find((t) => t.slug === selectedSlug) ?? category?.treatments[0] ?? null;
 
@@ -106,4 +108,33 @@ export function TreatmentDialog({ category, selectedSlug, onSelect, onOpenChange
       </DialogContent>
     </Dialog>
   );
+}
+
+type TreatmentDialogContextValue = { openTreatment: (ref: TreatmentRef) => void };
+
+const TreatmentDialogContext = createContext<TreatmentDialogContextValue | null>(null);
+
+/** Una sola ficha para toda la página: la abren el catálogo, los beneficios, las promociones y el pie. */
+export function TreatmentDialogProvider({ children }: { children: ReactNode }) {
+  const [selection, setSelection] = useState<TreatmentRef | null>(null);
+  const openTreatment = useCallback((ref: TreatmentRef) => setSelection(ref), []);
+  const value = useMemo(() => ({ openTreatment }), [openTreatment]);
+
+  return (
+    <TreatmentDialogContext value={value}>
+      {children}
+      <TreatmentDialog
+        category={selection ? (findCategory(selection.categoryId) ?? null) : null}
+        selectedSlug={selection?.slug ?? null}
+        onSelect={(slug) => setSelection((s) => (s ? { ...s, slug } : s))}
+        onOpenChange={(open) => !open && setSelection(null)}
+      />
+    </TreatmentDialogContext>
+  );
+}
+
+export function useTreatmentDialog() {
+  const context = useContext(TreatmentDialogContext);
+  if (!context) throw new Error("useTreatmentDialog necesita TreatmentDialogProvider");
+  return context;
 }

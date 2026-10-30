@@ -1,12 +1,10 @@
 import { ArrowRight, ChevronRight } from "lucide-react";
-import { useState } from "react";
-import { PranaIcon } from "@/components/prana-icon";
-import { TreatmentDialog } from "@/components/treatment-dialog";
+import { PranaIcon } from "@/components/PranaIcon";
+import { useTreatmentDialog } from "@/components/home/TreatmentDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { categories, type Category } from "@/data/content";
-
-type Selection = { categoryId: string; slug: string | null } | null;
+import { categories } from "@/data/treatments";
+import type { Category } from "@/types";
 
 function CategoryPhoto({ category, className }: { category: Category; className?: string }) {
   return (
@@ -24,7 +22,7 @@ function CategoryPhoto({ category, className }: { category: Category; className?
   );
 }
 
-function CategoryCard({ category, onOpen }: { category: Category; onOpen: (slug: string | null) => void }) {
+function CategoryCard({ category, onOpen }: { category: Category; onOpen: (slug?: string) => void }) {
   return (
     <Card
       className="gap-0 overflow-hidden rounded-2xl border-white/80 py-0 shadow-soft"
@@ -39,6 +37,7 @@ function CategoryCard({ category, onOpen }: { category: Category; onOpen: (slug:
       </div>
       <div className="flex flex-1 flex-col px-5 pt-9 pb-5">
         <h3 className="text-center text-xl leading-tight font-semibold lg:text-[1.35rem]">{category.title}</h3>
+        <p className="mt-2 text-center text-sm leading-snug text-muted-foreground">{category.description}</p>
 
         {/* Escritorio: cada tratamiento abre su ficha. Tableta: resumen en una línea. */}
         <ul className="mt-4 mb-5 hidden space-y-1 lg:block">
@@ -55,13 +54,13 @@ function CategoryCard({ category, onOpen }: { category: Category; onOpen: (slug:
             </li>
           ))}
         </ul>
-        <p className="mt-3 mb-5 text-center text-sm text-muted-foreground lg:hidden">
+        <p className="mt-3 mb-5 text-center text-sm font-medium text-foreground/80 lg:hidden">
           {category.treatments.map((t) => t.name).join(" · ")}
         </p>
 
         <Button
           type="button"
-          onClick={() => onOpen(null)}
+          onClick={() => onOpen()}
           className="bg-prana-boton mt-auto h-11 w-full rounded-full font-semibold text-white shadow-soft hover:brightness-110"
         >
           {category.cta}
@@ -95,9 +94,8 @@ function CategoryRow({ category, onOpen }: { category: Category; onOpen: () => v
   );
 }
 
-export function Catalog() {
-  const [selection, setSelection] = useState<Selection>(null);
-  const selectedCategory = categories.find((c) => c.id === selection?.categoryId) ?? null;
+export function TreatmentCatalog() {
+  const { openTreatment } = useTreatmentDialog();
 
   return (
     <section id="tratamientos" aria-labelledby="tratamientos-titulo" className="bg-background py-14 sm:py-20">
@@ -111,14 +109,12 @@ export function Catalog() {
           </p>
         </header>
 
-        {/* Destino de «Promociones»: los paquetes están en este catálogo, en móvil y en escritorio. */}
-        <span id="promociones" aria-hidden="true" />
         <div className="mt-10 hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-4">
           {categories.map((category) => (
             <CategoryCard
               key={category.id}
               category={category}
-              onOpen={(slug) => setSelection({ categoryId: category.id, slug })}
+              onOpen={(slug) => openTreatment({ categoryId: category.id, slug })}
             />
           ))}
         </div>
@@ -128,18 +124,11 @@ export function Catalog() {
             <CategoryRow
               key={category.id}
               category={category}
-              onOpen={() => setSelection({ categoryId: category.id, slug: null })}
+              onOpen={() => openTreatment({ categoryId: category.id })}
             />
           ))}
         </ul>
       </div>
-
-      <TreatmentDialog
-        category={selectedCategory}
-        selectedSlug={selection?.slug ?? null}
-        onSelect={(slug) => setSelection((s) => (s ? { ...s, slug } : s))}
-        onOpenChange={(open) => !open && setSelection(null)}
-      />
     </section>
   );
 }

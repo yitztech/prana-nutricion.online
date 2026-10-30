@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
-import { WhatsAppIcon } from "@/components/whatsapp-icon";
+import { WhatsAppIcon } from "@/components/BrandIcons";
 import { bookingUrl } from "@/lib/booking";
 import { cn } from "@/lib/utils";
 

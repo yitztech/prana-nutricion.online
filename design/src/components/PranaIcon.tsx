@@ -1,4 +1,4 @@
-import type { IconName } from "@/data/content";
+import type { IconName } from "@/types";
 import { cn } from "@/lib/utils";
 
 /**

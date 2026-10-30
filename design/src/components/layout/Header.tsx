@@ -1,6 +1,6 @@
 import { Menu } from "lucide-react";
-import { useState } from "react";
-import { BookingButton } from "@/components/booking-button";
+import { useRef, useState } from "react";
+import { BookingButton } from "@/components/BookingButton";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { navItems } from "@/data/content";
+import { navItems } from "@/data/site";
 import { useActiveSection } from "@/hooks/use-active-section";
 import { cn } from "@/lib/utils";
 
@@ -30,8 +30,22 @@ function Logo({ className }: { className?: string }) {
   );
 }
 
-export function SiteHeader() {
+export function Header() {
   const [open, setOpen] = useState(false);
+  // El Sheet bloquea el scroll mientras está abierto: se navega al cerrarse, no al pulsar.
+  const pendingTarget = useRef<string | null>(null);
+
+  function goToPendingTarget(event: Event) {
+    const id = pendingTarget.current;
+    pendingTarget.current = null;
+    const target = id ? document.getElementById(id) : null;
+    if (!target) return;
+    event.preventDefault();
+    history.pushState(null, "", `#${id}`);
+    target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+    target.scrollIntoView();
+  }
   const active = useActiveSection(sectionIds);
 
   return (
@@ -69,7 +83,7 @@ export function SiteHeader() {
                 <Menu className="size-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[min(20rem,85vw)] bg-background">
+            <SheetContent side="right" onCloseAutoFocus={goToPendingTarget} className="w-[min(20rem,85vw)] bg-background">
               <SheetHeader>
                 <SheetTitle className="font-serif text-xl">Menú</SheetTitle>
                 <SheetDescription className="sr-only">Secciones de la página</SheetDescription>
@@ -80,7 +94,11 @@ export function SiteHeader() {
                     <li key={item.href}>
                       <a
                         href={item.href}
-                        onClick={() => setOpen(false)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          pendingTarget.current = item.href.slice(1);
+                          setOpen(false);
+                        }}
                         aria-current={active === item.href.slice(1) ? "location" : undefined}
                         className="block rounded-lg px-3 py-3 text-base font-medium hover:bg-secondary aria-[current]:bg-secondary aria-[current]:text-primary"
                       >

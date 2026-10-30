@@ -1,76 +1,4 @@
-/** Nombre de un icono de Praná en public/img/iconos (generado desde recursos/). */
-export type IconName =
-  | "acompanamiento"
-  | "aparatologia-corporal"
-  | "atencion-personalizada"
-  | "bienestar-integral"
-  | "bikini-completo"
-  | "carboxiterapia"
-  | "cavitacion"
-  | "cuerpo-completo"
-  | "lipo-laser"
-  | "mejora-la-circulacion"
-  | "mesoterapia"
-  | "mini-lipo"
-  | "moldea-tu-figura"
-  | "paquete-carboxiterapia"
-  | "piel-mas-firme"
-  | "reduccion-medidas"
-  | "reset-prana"
-  | "resultados-que-se-notan"
-  | "resultados-visibles"
-  | "seccion-depilacion-laser"
-  | "seccion-paquetes-y-promociones"
-  | "seccion-tratamientos-corporales"
-  | "seccion-tratamientos-reductivos-2"
-  | "tecnologia-de-vanguardia"
-  | "tratamiento-intensivo"
-  | "tratamientos-combinados"
-  | "tratamientos-no-invasivos"
-  | "valoracion-personalizada";
-
-export type Highlight = { icon: IconName; label: string };
-
-export type Treatment = {
-  slug: string;
-  name: string;
-  icon: IconName;
-  description: string;
-};
-
-export type Category = {
-  id: string;
-  title: string;
-  description: string;
-  /** Prefijo de public/img/<photo>-640.webp y -1024.webp */
-  photo: string;
-  photoAlt: string;
-  icon: IconName;
-  cta: string;
-  benefits: string[];
-  treatments: Treatment[];
-};
-
-export const heroHighlights: Highlight[] = [
-  { icon: "tratamientos-no-invasivos", label: "Tratamientos no invasivos" },
-  { icon: "atencion-personalizada", label: "Atención personalizada" },
-  { icon: "resultados-que-se-notan", label: "Resultados que se notan" },
-];
-
-export const wellnessBand: Highlight[] = [
-  { icon: "reduccion-medidas", label: "Reducción de medidas" },
-  { icon: "mejora-la-circulacion", label: "Mejora la circulación" },
-  { icon: "moldea-tu-figura", label: "Moldea tu figura" },
-  { icon: "piel-mas-firme", label: "Piel más firme y rejuvenecida" },
-  { icon: "bienestar-integral", label: "Bienestar integral" },
-];
-
-export const pillars: Highlight[] = [
-  { icon: "valoracion-personalizada", label: "Valoración personalizada para definir tu plan" },
-  { icon: "tecnologia-de-vanguardia", label: "Tecnología de vanguardia y protocolos seguros" },
-  { icon: "acompanamiento", label: "Acompañamiento durante todo tu tratamiento" },
-  { icon: "resultados-visibles", label: "Resultados visibles y bienestar real" },
-];
+import type { Category, TreatmentRef } from "@/types";
 
 /** Lo que vale para todas las fichas. Precios, sesiones y promociones vigentes los confirma la clínica. */
 export const treatmentNotes = [
@@ -225,10 +153,15 @@ export const categories: Category[] = [
   },
 ];
 
-export const navItems = [
-  { href: "#inicio", label: "Inicio" },
-  { href: "#tratamientos", label: "Tratamientos" },
-  { href: "#nosotros", label: "Nosotros" },
-  { href: "#promociones", label: "Promociones" },
-  { href: "#contacto", label: "Contacto" },
-] as const;
+
+export function findCategory(id: string) {
+  return categories.find((c) => c.id === id);
+}
+
+/** Nombre visible de una referencia: el tratamiento, o la categoría si no indica uno. */
+export function treatmentRefLabel(ref: TreatmentRef) {
+  const category = findCategory(ref.categoryId);
+  if (!category) return "";
+  if (!ref.slug) return category.title;
+  return category.treatments.find((t) => t.slug === ref.slug)?.name ?? category.title;
+}

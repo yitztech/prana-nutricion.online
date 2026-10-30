@@ -1,12 +1,12 @@
-import { BookingButton } from "@/components/booking-button";
-import { PranaIcon } from "@/components/prana-icon";
-import { heroHighlights } from "@/data/content";
+import { BookingButton } from "@/components/BookingButton";
+import { PranaIcon } from "@/components/PranaIcon";
+import { heroHighlights } from "@/data/site";
 
 const heroSrcSet = "/img/hero-960.webp 960w, /img/hero-1440.webp 1440w, /img/hero-1971.webp 1971w";
 
 export function Hero() {
   return (
-    <section id="inicio" aria-labelledby="hero-titulo" className="relative isolate overflow-hidden bg-prana-suave">
+    <section id="inicio" aria-labelledby="hero-titulo" className="relative isolate overflow-hidden bg-prana-suave md:flex md:flex-col md:justify-center lg:min-h-[min(40vw,64rem)]">
       {/* Móvil: la fotografía arriba, a sangre, y el texto debajo. Desde md: fondo completo. */}
       <div className="relative h-72 sm:h-96 md:absolute md:inset-0 md:h-auto">
         <img
@@ -17,7 +17,7 @@ export function Hero() {
           width={1971}
           height={798}
           fetchPriority="high"
-          className="size-full object-cover object-[82%_center] md:object-[70%_center] lg:object-right"
+          className="size-full object-cover object-[82%_center] md:object-[70%_center] lg:object-[right_top]"
         />
         <div
           aria-hidden="true"
@@ -40,7 +40,7 @@ export function Hero() {
         decides ♡
       </p>
 
-      <div className="relative mx-auto max-w-7xl px-4 pt-2 pb-10 sm:px-6 md:pt-16 md:pb-12 lg:px-8 lg:pt-20 lg:pb-14">
+      <div className="relative mx-auto w-full max-w-7xl px-4 pt-2 pb-10 sm:px-6 md:pt-16 md:pb-12 lg:px-8 lg:pt-20 lg:pb-14">
         <div className="max-w-xl">
           <p className="text-xs font-semibold tracking-[0.25em] text-foreground/80 uppercase">
             Praná · Nutrición y bienestar

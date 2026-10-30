@@ -1,7 +1,7 @@
 import { Phone } from "lucide-react";
-import { BookingButton } from "@/components/booking-button";
+import { BookingButton } from "@/components/BookingButton";
 import { Button } from "@/components/ui/button";
-import { PHONE_HREF } from "@/lib/booking";
+import { contact } from "@/data/site";
 
 /** Barra fija en móvil: llamar o escribir por WhatsApp. Respeta el área segura inferior. */
 export function MobileActionBar() {
@@ -13,7 +13,7 @@ export function MobileActionBar() {
           variant="outline"
           className="h-12 rounded-full border-2 border-primary bg-white text-base font-semibold text-primary hover:bg-secondary hover:text-primary"
         >
-          <a href={PHONE_HREF}>
+          <a href={contact.phoneHref}>
             <Phone className="size-5" />
             Llamar
           </a>
