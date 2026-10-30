@@ -23,11 +23,14 @@ export function Benefits() {
                   <PranaIcon name={benefit.icon} size={64} className="size-11 md:size-12 lg:size-16" />
                 </span>
                 <span className="min-w-0 text-[0.8rem] leading-snug font-medium text-foreground/90 lg:text-base">
-                  {benefit.title}
-                  <ChevronDown
-                    aria-hidden="true"
-                    className="ml-1 hidden size-3.5 text-primary transition-transform group-data-[state=open]:rotate-180 xl:inline"
-                  />
+                  {benefit.title.slice(0, benefit.title.lastIndexOf(" ") + 1)}
+                  <span className="whitespace-nowrap">
+                    {benefit.title.slice(benefit.title.lastIndexOf(" ") + 1)}
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="ml-1 hidden size-3.5 text-primary transition-transform group-data-[state=open]:rotate-180 xl:inline"
+                    />
+                  </span>
                 </span>
               </PopoverTrigger>
               <PopoverContent aria-label={`Tratamientos relacionados con ${benefit.title}`} className="w-64 rounded-2xl p-3">

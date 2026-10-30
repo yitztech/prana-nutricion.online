@@ -22,31 +22,13 @@ export const pillars: Highlight[] = [
 ];
 
 /**
- * Objetivos que se pueden trabajar y los tratamientos relacionados, en el orden e iconos de la franja
- * del mockup. No son resultados garantizados.
+ * Franja del mockup: sus textos e iconos, y los tratamientos relacionados con cada objetivo.
+ * Los resultados dependen de cada persona y se valoran en consulta.
  */
 export const benefits: Benefit[] = [
   {
     icon: "reduccion-medidas",
-    title: "Cuidado estético y corporal",
-    treatments: [
-      { categoryId: "reductivos", slug: "aparatologia-corporal" },
-      { categoryId: "depilacion-laser", slug: "depilacion-cuerpo-completo" },
-      { categoryId: "depilacion-laser", slug: "depilacion-bikini-completo" },
-      { categoryId: "promociones", slug: "paquete-carboxiterapia" },
-    ],
-  },
-  {
-    icon: "mejora-la-circulacion",
-    title: "Mejora de la apariencia de la piel",
-    treatments: [
-      { categoryId: "corporales", slug: "carboxiterapia" },
-      { categoryId: "corporales", slug: "mesoterapia" },
-    ],
-  },
-  {
-    icon: "moldea-tu-figura",
-    title: "Cuidado del contorno corporal",
+    title: "Reducción de medidas",
     treatments: [
       { categoryId: "reductivos", slug: "mini-lipo" },
       { categoryId: "reductivos", slug: "lipolaser" },
@@ -55,13 +37,29 @@ export const benefits: Benefit[] = [
     ],
   },
   {
-    icon: "piel-mas-firme",
-    title: "Atención personalizada",
+    icon: "mejora-la-circulacion",
+    title: "Mejora la circulación",
     treatments: [
-      { categoryId: "reductivos" },
-      { categoryId: "corporales" },
-      { categoryId: "depilacion-laser" },
-      { categoryId: "promociones" },
+      { categoryId: "corporales", slug: "carboxiterapia" },
+      { categoryId: "promociones", slug: "paquete-carboxiterapia" },
+      { categoryId: "reductivos", slug: "aparatologia-corporal" },
+    ],
+  },
+  {
+    icon: "moldea-tu-figura",
+    title: "Moldea tu figura",
+    treatments: [
+      { categoryId: "reductivos", slug: "aparatologia-corporal" },
+      { categoryId: "reductivos", slug: "cavitacion" },
+      { categoryId: "promociones", slug: "tratamientos-combinados" },
+    ],
+  },
+  {
+    icon: "piel-mas-firme",
+    title: "Piel más firme y rejuvenecida",
+    treatments: [
+      { categoryId: "corporales", slug: "mesoterapia" },
+      { categoryId: "corporales", slug: "carboxiterapia" },
     ],
   },
   {
