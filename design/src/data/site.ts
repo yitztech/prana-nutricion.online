@@ -21,8 +21,29 @@ export const pillars: Highlight[] = [
   { icon: "resultados-visibles", label: "Resultados visibles y bienestar real" },
 ];
 
-/** Objetivos que se pueden trabajar y los tratamientos relacionados. No son resultados garantizados. */
+/**
+ * Objetivos que se pueden trabajar y los tratamientos relacionados, en el orden e iconos de la franja
+ * del mockup. No son resultados garantizados.
+ */
 export const benefits: Benefit[] = [
+  {
+    icon: "reduccion-medidas",
+    title: "Cuidado estético y corporal",
+    treatments: [
+      { categoryId: "reductivos", slug: "aparatologia-corporal" },
+      { categoryId: "depilacion-laser", slug: "depilacion-cuerpo-completo" },
+      { categoryId: "depilacion-laser", slug: "depilacion-bikini-completo" },
+      { categoryId: "promociones", slug: "paquete-carboxiterapia" },
+    ],
+  },
+  {
+    icon: "mejora-la-circulacion",
+    title: "Mejora de la apariencia de la piel",
+    treatments: [
+      { categoryId: "corporales", slug: "carboxiterapia" },
+      { categoryId: "corporales", slug: "mesoterapia" },
+    ],
+  },
   {
     icon: "moldea-tu-figura",
     title: "Cuidado del contorno corporal",
@@ -35,22 +56,6 @@ export const benefits: Benefit[] = [
   },
   {
     icon: "piel-mas-firme",
-    title: "Mejora de la apariencia de la piel",
-    treatments: [
-      { categoryId: "corporales", slug: "carboxiterapia" },
-      { categoryId: "corporales", slug: "mesoterapia" },
-    ],
-  },
-  {
-    icon: "bienestar-integral",
-    title: "Bienestar integral",
-    treatments: [
-      { categoryId: "promociones", slug: "reset-prana" },
-      { categoryId: "promociones", slug: "tratamientos-combinados" },
-    ],
-  },
-  {
-    icon: "atencion-personalizada",
     title: "Atención personalizada",
     treatments: [
       { categoryId: "reductivos" },
@@ -60,13 +65,11 @@ export const benefits: Benefit[] = [
     ],
   },
   {
-    icon: "reduccion-medidas",
-    title: "Cuidado estético y corporal",
+    icon: "bienestar-integral",
+    title: "Bienestar integral",
     treatments: [
-      { categoryId: "reductivos", slug: "aparatologia-corporal" },
-      { categoryId: "depilacion-laser", slug: "depilacion-cuerpo-completo" },
-      { categoryId: "depilacion-laser", slug: "depilacion-bikini-completo" },
-      { categoryId: "promociones", slug: "paquete-carboxiterapia" },
+      { categoryId: "promociones", slug: "reset-prana" },
+      { categoryId: "promociones", slug: "tratamientos-combinados" },
     ],
   },
 ];

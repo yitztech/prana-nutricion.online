@@ -33,21 +33,21 @@ export function Philosophy() {
         className="absolute inset-0 -z-10 hidden bg-gradient-to-r from-[#fff8fb]/90 via-[#fff8fb]/50 to-transparent md:block xl:via-transparent xl:to-transparent xl:from-[#fff8fb]/70"
       />
 
-      <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 md:py-20 xl:grid-cols-[1fr_20rem] lg:px-8">
-        <div className="max-w-md text-center md:text-left">
-          <h2 id="nosotros-titulo" className="text-3xl leading-tight font-semibold sm:text-4xl">
+      <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-12 sm:px-6 md:py-14 xl:py-12 xl:grid-cols-[1fr_22rem] lg:px-8">
+        <div className="mx-auto max-w-lg text-center md:mx-0 md:text-left">
+          <h2 id="nosotros-titulo" className="text-[1.9rem] leading-tight font-bold text-[#24202f] sm:text-4xl xl:text-[2.6rem]">
             Más que estética,
-            <span className="block font-script text-5xl font-normal text-primary sm:text-6xl">
+            <span className="block font-script text-5xl leading-[1.2] font-normal text-[#d81b6a] sm:text-6xl">
               bienestar integral
             </span>
           </h2>
-          <p className="mt-5 leading-relaxed text-foreground/85">
+          <p className="mt-4 leading-relaxed text-foreground/90 lg:text-lg">
             En Praná creemos en una belleza que nace del equilibrio. Por eso, combinamos tecnología,
             experiencia y un trato humano para ayudarte a sentirte bien por dentro y por fuera.
           </p>
           <Button
             asChild
-            className="bg-prana-boton mt-7 h-11 rounded-full px-6 font-semibold text-white shadow-soft hover:brightness-110"
+            className="bg-prana-boton mt-6 h-12 rounded-full px-7 text-base font-semibold text-white shadow-soft hover:brightness-110"
           >
             <a href="#contacto">
               Conoce nuestra filosofía
@@ -63,7 +63,7 @@ export function Philosophy() {
               className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/85 p-3 shadow-soft backdrop-blur-sm"
             >
               <PranaIcon name={item.icon} size={48} className="size-11" />
-              <span className="text-sm leading-snug font-medium">{item.label}</span>
+              <span className="text-[0.95rem] leading-snug font-medium">{item.label}</span>
             </li>
           ))}
         </ul>

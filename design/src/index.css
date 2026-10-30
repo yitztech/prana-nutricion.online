@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource/great-vibes/latin-400.css";
+@import "@fontsource/parisienne/latin-400.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -49,7 +49,7 @@
 @theme inline {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
-  --font-script: "Great Vibes", cursive;
+  --font-script: "Parisienne", cursive;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -91,6 +91,17 @@
     scroll-behavior: smooth;
     scroll-padding-top: 5rem;
   }
+  /* El mockup de escritorio está compuesto a ~1100 px: en pantallas anchas se escala todo el rem. */
+  @media (min-width: 1440px) {
+    html {
+      font-size: 17px;
+    }
+  }
+  @media (min-width: 1800px) {
+    html {
+      font-size: 18px;
+    }
+  }
   body {
     @apply bg-background font-sans text-foreground antialiased;
   }
@@ -113,10 +124,13 @@
 }
 
 @utility bg-prana-boton {
-  background-image: linear-gradient(90deg, #b81e66 0%, #d42f7a 100%);
+  background-image: linear-gradient(90deg, #d41c6c 0%, #de2a7a 100%);
 }
 @utility bg-prana-suave {
   background-image: linear-gradient(135deg, #fff8fb 0%, #fce5ee 55%, #f6c9de 100%);
+}
+@utility bg-prana-tarjeta {
+  background-image: linear-gradient(180deg, #ffffff 0%, #fff6fa 55%, #fdeaf2 100%);
 }
 @utility bg-prana-banda {
   background-image: linear-gradient(90deg, #fdeef5 0%, #fbe3ef 50%, #f6e3f5 100%);

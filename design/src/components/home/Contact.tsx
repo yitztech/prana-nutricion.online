@@ -27,7 +27,7 @@ export function Contact() {
           <div>
             <p className="text-xs font-semibold tracking-[0.25em] text-foreground/80 uppercase">Visítanos en Cuautla</p>
             <h2 id="contacto-titulo" className="mt-2 text-3xl font-semibold sm:text-4xl">
-              Tu cuidado <span className="font-script text-5xl font-normal text-primary">empieza aquí</span>
+              Tu cuidado <span className="font-script text-5xl font-normal text-[#d81b6a]">empieza aquí</span>
             </h2>
             <p className="mt-4 text-foreground/85">
               Agenda tu valoración por WhatsApp. El equipo te ayuda a elegir el tratamiento y confirma

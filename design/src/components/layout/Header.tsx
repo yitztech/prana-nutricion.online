@@ -24,7 +24,7 @@ function Logo({ className }: { className?: string }) {
         alt="Praná · Nutrición y Bienestar"
         width={640}
         height={213}
-        className="h-11 w-auto mix-blend-multiply sm:h-12"
+        className="h-11 w-auto mix-blend-multiply sm:h-12 md:h-14"
       />
     </a>
   );
@@ -50,7 +50,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/60 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/70">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:h-[4.5rem] sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 md:h-20 lg:px-8">
         <Logo />
 
         <nav aria-label="Principal" className="ml-auto hidden lg:block">
@@ -63,7 +63,7 @@ export function Header() {
                     href={item.href}
                     aria-current={current ? "location" : undefined}
                     className={cn(
-                      "relative rounded-md px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary",
+                      "relative rounded-md px-3 py-2 text-[0.95rem] font-medium text-foreground/85 transition-colors hover:text-primary",
                       "after:absolute after:inset-x-3 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 after:transition-opacity",
                       current && "text-primary after:opacity-100",
                     )}
@@ -115,7 +115,7 @@ export function Header() {
           </Sheet>
 
           <BookingButton origin="cabecera" label="Agenda" arrow={false} size="sm" className="h-9 px-4 sm:hidden" />
-          <BookingButton origin="cabecera" arrow={false} className="hidden h-10 px-5 sm:inline-flex" />
+          <BookingButton origin="cabecera" arrow={false} className="hidden h-11 px-5 text-[0.95rem] sm:inline-flex" />
         </div>
       </div>
     </header>
