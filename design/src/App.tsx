@@ -1,23 +1,21 @@
-import { Benefits } from "@/components/home/Benefits";
-import { Contact } from "@/components/home/Contact";
-import { Hero } from "@/components/home/Hero";
-import { Philosophy } from "@/components/home/Philosophy";
-import { Promotions } from "@/components/home/Promotions";
-import { TreatmentCatalog } from "@/components/home/TreatmentCatalog";
-import { TreatmentDialogProvider } from "@/components/home/TreatmentDialog";
+import { TreatmentDialogProvider } from "@/components/patterns/TreatmentDialog";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { MobileActionBar } from "@/components/layout/MobileActionBar";
+import { Benefits } from "@/components/sections/Benefits";
+import { Contact } from "@/components/sections/Contact";
+import { Hero } from "@/components/sections/Hero";
+import { Philosophy } from "@/components/sections/Philosophy";
+import { Promotions } from "@/components/sections/Promotions";
+import { TreatmentCatalog } from "@/components/sections/TreatmentCatalog";
+import { TextLink } from "@/components/ui/text-link";
 
 export default function App() {
   return (
     <TreatmentDialogProvider>
-      <a
-        href="#contenido"
-        className="sr-only z-50 rounded-full bg-primary px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-      >
+      <TextLink variant="skip" href="#contenido">
         Saltar al contenido
-      </a>
+      </TextLink>
       <Header />
       <main id="contenido">
         <Hero />

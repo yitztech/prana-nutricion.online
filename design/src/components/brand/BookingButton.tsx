@@ -1,10 +1,10 @@
 import { ArrowRight } from "lucide-react";
 import type { ComponentProps } from "react";
+import { WhatsAppIcon } from "@/components/brand/BrandIcons";
 import { Button } from "@/components/ui/button";
-import { WhatsAppIcon } from "@/components/BrandIcons";
 import { bookingUrl } from "@/lib/booking";
 
-type BookingButtonProps = Omit<ComponentProps<typeof Button>, "asChild" | "children"> & {
+type BookingButtonProps = Omit<ComponentProps<typeof Button>, "asChild" | "children" | "variant"> & {
   treatment?: string;
   origin: string;
   label?: string;
@@ -20,11 +20,11 @@ export function BookingButton({
   label = "Agenda tu valoración",
   arrow = true,
   icon = false,
-  className,
+  size = "cta",
   ...props
 }: BookingButtonProps) {
   return (
-    <Button asChild variant="prana" size="prana" className={className} {...props}>
+    <Button asChild variant="cta" size={size} {...props}>
       <a
         href={bookingUrl(treatment)}
         target="_blank"
@@ -33,7 +33,7 @@ export function BookingButton({
         data-umami-event-origen={origin}
         data-umami-event-servicio={treatment ?? "general"}
       >
-        {icon && <WhatsAppIcon className="size-4" />}
+        {icon && <WhatsAppIcon className="size-5" />}
         {label}
         {arrow && <ArrowRight className="size-4" />}
         <span className="sr-only"> (abre WhatsApp)</span>

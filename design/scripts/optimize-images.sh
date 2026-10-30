@@ -16,7 +16,14 @@ for w in 960 1440 1971; do
   webp hero-inferior.png "filosofia-$w.webp" "$w"
 done
 webp background.png fondo-1280.webp 1280 70
-webp logo-completo.png logo-prana.webp 640 85
+# Logo en dos máscaras (mandala y texto) para colorearlo con las variables del tema.
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/logo.XXXXXX")
+cwebp -quiet -lossless -resize 640 0 "$src/logo-completo.png" -o "$tmp/logo.webp"
+dwebp -quiet "$tmp/logo.webp" -pam -o "$tmp/logo.pam"
+node scripts/logo-masks.mjs "$tmp/logo.pam" "$tmp/mandala.pam" "$tmp/texto.pam"
+cwebp -quiet -q 85 -alpha_q 90 "$tmp/mandala.pam" -o "$out/logo-mandala.webp"
+cwebp -quiet -q 85 -alpha_q 90 "$tmp/texto.pam" -o "$out/logo-texto.webp"
+rm -r "$tmp"
 
 webp tratemiento-1.png tratamientos-reductivos-640.webp 640
 webp tratemiento-1.png tratamientos-reductivos-1024.webp 1024

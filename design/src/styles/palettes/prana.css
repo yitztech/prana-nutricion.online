@@ -1,0 +1,47 @@
+/*
+ * Paleta Praná: colores en bruto, sacados del mockup (design/Mockup.png).
+ * Ningún componente los usa directamente: themes.css los asigna a roles.
+ * Otra paleta = otro archivo con los mismos nombres, importado en lugar de este.
+ */
+:root {
+  --prana-rosa-50: #fff8fb;
+  --prana-rosa-100: #fdf0f5;
+  --prana-rosa-150: #fce7f0;
+  --prana-rosa-200: #fbe3ef;
+  --prana-rosa-250: #f7dce9;
+  --prana-rosa-300: #f3d5e3;
+  --prana-rosa-350: #f0cadb;
+  --prana-rosa-400: #f6c9de;
+  --prana-rosa-450: #ff8fbf;
+  --prana-rosa-500: #f0629b;
+  --prana-rosa-550: #fd2170;
+  --prana-rosa-600: #de2a7a;
+  --prana-rosa-650: #d93680;
+  --prana-rosa-700: #d41c6c;
+  --prana-rosa-800: #c8236e;
+  --prana-rosa-900: #b4557f;
+
+  --prana-lila-100: #f6e3f5;
+  --prana-lila-200: #eed6f1;
+  --prana-lila-400: #c99bd0;
+  --prana-lila-600: #a65ba8;
+
+  --prana-tinta-900: #212331;
+  --prana-tinta-850: #24202f;
+  --prana-tinta-800: #302b32;
+  --prana-tinta-600: #5f5462;
+
+  /* Fondos del modo oscuro: ciruela profundo. */
+  --prana-noche-950: #171117;
+  --prana-noche-900: #1e161d;
+  --prana-noche-850: #261c25;
+  --prana-noche-800: #30232e;
+  --prana-noche-700: #40303d;
+  --prana-noche-600: #574354;
+  --prana-niebla-300: #cdbcc8;
+  --prana-niebla-100: #f7eef3;
+
+  --prana-blanco: #ffffff;
+  --prana-rojo-700: #b42318;
+  --prana-rojo-300: #f97066;
+}

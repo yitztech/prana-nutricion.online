@@ -1,0 +1,116 @@
+/*
+ * Roles semánticos. Los componentes solo usan estos nombres (vía Tailwind: bg-card, text-heading…).
+ * Claro y oscuro definen exactamente las mismas variables; una prueba lo comprueba.
+ * Los pares texto/fondo cumplen WCAG 2.2 AA (4.5:1 en texto normal).
+ */
+:root {
+  color-scheme: light;
+
+  /* shadcn/ui */
+  --radius: 1rem;
+  --background: var(--prana-rosa-50);
+  --foreground: var(--prana-tinta-800);
+  --card: var(--prana-blanco);
+  --card-foreground: var(--prana-tinta-800);
+  --popover: var(--prana-blanco);
+  --popover-foreground: var(--prana-tinta-800);
+  --primary: var(--prana-rosa-800);
+  --primary-foreground: var(--prana-blanco);
+  --secondary: var(--prana-rosa-150);
+  --secondary-foreground: var(--prana-tinta-800);
+  --muted: var(--prana-rosa-100);
+  --muted-foreground: var(--prana-tinta-600);
+  --accent: var(--prana-rosa-250);
+  --accent-foreground: var(--prana-tinta-800);
+  --destructive: var(--prana-rojo-700);
+  --border: var(--prana-rosa-300);
+  --input: var(--prana-rosa-350);
+  --ring: var(--prana-rosa-650);
+
+  /* Texto de marca */
+  --heading: var(--prana-tinta-850);
+  --script: var(--prana-rosa-700);
+  --script-muted: var(--prana-rosa-900);
+  --info: var(--prana-lila-600);
+
+  /* Superficies */
+  --icon-surface: var(--prana-blanco);
+  --shadow-color: color-mix(in srgb, var(--prana-rosa-800) 22%, transparent);
+  /* Brillo de las fotos de fondo con texto encima (1 = sin cambio). */
+  --photo-brightness: 1;
+  /* Fondo tras un diálogo o menú abierto. */
+  --scrim: color-mix(in srgb, var(--prana-tinta-900) 50%, transparent);
+
+  /* Botón de acción principal: el texto blanco necesita 4.5:1 sobre los dos extremos. */
+  --cta-from: var(--prana-rosa-700);
+  --cta-to: var(--prana-rosa-600);
+  --cta-foreground: var(--prana-blanco);
+
+  /* Degradados de fondo */
+  --soft-from: var(--prana-rosa-50);
+  --soft-via: var(--prana-rosa-150);
+  --soft-to: var(--prana-rosa-400);
+  --panel-from: var(--prana-blanco);
+  --panel-via: var(--prana-rosa-50);
+  --panel-to: var(--prana-rosa-100);
+  --band-from: var(--prana-rosa-100);
+  --band-via: var(--prana-rosa-200);
+  --band-to: var(--prana-lila-100);
+
+  /* Logo (máscaras en public/img/logo-*.webp) */
+  --logo-mark: var(--prana-rosa-550);
+  --logo-ink: var(--prana-tinta-900);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --radius: 1rem;
+  --background: var(--prana-noche-900);
+  --foreground: var(--prana-niebla-100);
+  --card: var(--prana-noche-850);
+  --card-foreground: var(--prana-niebla-100);
+  --popover: var(--prana-noche-800);
+  --popover-foreground: var(--prana-niebla-100);
+  --primary: var(--prana-rosa-450);
+  --primary-foreground: var(--prana-noche-950);
+  --secondary: var(--prana-noche-700);
+  --secondary-foreground: var(--prana-niebla-100);
+  --muted: var(--prana-noche-800);
+  --muted-foreground: var(--prana-niebla-300);
+  --accent: var(--prana-noche-700);
+  --accent-foreground: var(--prana-niebla-100);
+  --destructive: var(--prana-rojo-300);
+  --border: var(--prana-noche-700);
+  --input: var(--prana-noche-600);
+  --ring: var(--prana-rosa-500);
+
+  --heading: var(--prana-blanco);
+  --script: var(--prana-rosa-450);
+  --script-muted: var(--prana-lila-400);
+  --info: var(--prana-lila-400);
+
+  /* Los iconos de Praná son ilustraciones sobre blanco: se muestran en un disco claro. */
+  --icon-surface: var(--prana-rosa-150);
+  --shadow-color: color-mix(in srgb, var(--prana-noche-950) 70%, transparent);
+  --scrim: color-mix(in srgb, var(--prana-noche-950) 70%, transparent);
+  /* Las fotos del mockup son muy claras: se oscurecen para que el texto claro se lea encima. */
+  --photo-brightness: 0.42;
+
+  --cta-from: var(--prana-rosa-700);
+  --cta-to: var(--prana-rosa-600);
+  --cta-foreground: var(--prana-blanco);
+
+  --soft-from: var(--prana-noche-900);
+  --soft-via: var(--prana-noche-850);
+  --soft-to: var(--prana-noche-700);
+  --panel-from: var(--prana-noche-850);
+  --panel-via: var(--prana-noche-850);
+  --panel-to: var(--prana-noche-800);
+  --band-from: var(--prana-noche-850);
+  --band-via: var(--prana-noche-800);
+  --band-to: var(--prana-noche-850);
+
+  --logo-mark: var(--prana-rosa-550);
+  --logo-ink: var(--prana-niebla-100);
+}

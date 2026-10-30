@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
@@ -39,7 +40,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "fixed inset-0 z-50 bg-scrim data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className
       )}
       {...props}
@@ -47,12 +48,28 @@ function DialogOverlay({
   )
 }
 
+const dialogContentVariants = cva(
+  "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+  {
+    variants: {
+      variant: {
+        default: "gap-4 rounded-lg p-6 sm:max-w-lg",
+        /** Ficha con cabecera y columnas propias: sin relleno, con scroll si no cabe. */
+        detail: "max-h-dialog gap-0 overflow-y-auto rounded-2xl p-0 sm:max-w-3xl",
+      },
+    },
+    defaultVariants: { variant: "default" },
+  }
+)
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  variant,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+}: React.ComponentProps<typeof DialogPrimitive.Content> &
+  VariantProps<typeof dialogContentVariants> & {
   showCloseButton?: boolean
 }) {
   return (
@@ -60,10 +77,7 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
-        className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
-          className
-        )}
+        className={cn(dialogContentVariants({ variant }), className)}
         {...props}
       >
         {children}
@@ -81,11 +95,26 @@ function DialogContent({
   )
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+const dialogHeaderVariants = cva("flex", {
+  variants: {
+    variant: {
+      default: "flex-col gap-2 text-center sm:text-left",
+      /** Cabecera con degradado, icono y título en fila. */
+      banner: "flex-row items-center gap-4 border-b bg-gradient-soft p-5 text-left sm:p-6",
+    },
+  },
+  defaultVariants: { variant: "default" },
+})
+
+function DialogHeader({
+  className,
+  variant,
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof dialogHeaderVariants>) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      className={cn(dialogHeaderVariants({ variant }), className)}
       {...props}
     />
   )
@@ -125,7 +154,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg leading-none font-semibold", className)}
+      className={cn("font-serif text-2xl leading-none font-semibold", className)}
       {...props}
     />
   )
