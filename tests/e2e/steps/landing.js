@@ -105,10 +105,6 @@ When("pulso {string}", async ({ page }, boton) => {
   await page.getByRole("button", { name: boton }).click();
 });
 
-When("pulso «Saber más» del servicio {string}", async ({ page }, servicio) => {
-  await capturarWhatsApp(page);
-  await page.getByRole("link", { name: `Saber más sobre ${servicio}` }).click();
-});
 
 Then("el campo {string} contiene {string}", async ({ page }, campo, valor) => {
   await expect(page.getByLabel(campo, { exact: true })).toHaveValue(valor);

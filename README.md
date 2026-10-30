@@ -90,8 +90,8 @@ y checksums SHA-256); `Escenarios`, `Seguridad` y `Publicar` cargan ese artefact
 atestaciones de procedencia y SBOM se adjuntan al digest publicado con `actions/attest`, sin reconstrucción.
 El intercambio sigue el [patrón oficial de Docker para compartir imágenes entre jobs](https://docs.docker.com/build/ci/github-actions/share-image-jobs/).
 
-La portada ejecuta axe con todas las reglas aplicables salvo `color-contrast`, que tiene un escenario
-independiente `@pendiente` hasta aprobar la paleta. Las páginas legales mantienen la comprobación completa.
+La portada y las páginas legales ejecutan axe con todas las reglas aplicables, incluido `color-contrast`.
+El diseño de reserva aprobado conserva un escenario específico de contraste como comprobación de regresión.
 Los resultados y límites de la comprobación local están en [la validación del cambio](docs/validacion-local.md).
 
 Las acciones de terceros van fijadas por commit. Lo que la plataforma pone en el entorno `production`
@@ -125,3 +125,16 @@ La skill está incluida en [`.agents/skills/shadcn/SKILL.md`](.agents/skills/sha
 y referencias para que otros checkouts puedan usarla. Antes de añadir un componente interactivo con estado
 React, evaluar su necesidad de hidratación: los componentes actuales se prerenderizan y el comportamiento
 progresivo del menú y del formulario lo mantiene `web/public/assets/main.js`.
+
+
+## Reserva directa
+
+La portada ofrece enlaces de valoración en cabecera, primera pantalla, cada tratamiento y contacto; en móvil,
+una barra fija conserva la acción al recorrer la página, con espacio inferior para no cubrir el contenido.
+Los enlaces nativos de `BookingLink` abren WhatsApp con un mensaje preparado y funcionan sin JavaScript.
+No confirman una cita: la clínica acuerda día y hora por WhatsApp. El formulario queda como alternativa
+para preparar un mensaje más detallado, con las mismas validaciones y recuperación ante ventanas bloqueadas.
+
+`web/src/lib/booking.js` centraliza las URL de reserva directa. Los enlaces llevan atributos de evento Umami
+`reserva-whatsapp` con origen y servicio; solo se registrarán si la analítica está activada. Un clic no equivale
+a una cita confirmada. Las pruebas interceptan la navegación a WhatsApp y no envían mensajes reales.

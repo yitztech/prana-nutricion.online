@@ -979,9 +979,10 @@ Lo específico de este repositorio: comandos de verificación, convenciones prop
   teléfono no se valida con libphonenumber: no se guarda ni se procesa, solo viaja en el texto de WhatsApp.
 - **Imágenes**: cada una en 640 y 1024 px (`cwebp -q 78 -resize <ancho> 0`), con `srcset`, `width`/`height` y
   `loading="lazy"` fuera de la primera pantalla. `assets/img/og.jpg` (1200×630) es la de redes sociales.
-- **Pendiente del cliente**: el contraste de la paleta (blanco sobre `rose` y texto `roseGold`) no llega a
-  WCAG AA; el escenario de axe de la portada está `@pendiente` hasta que se decida. Los textos legales
-  (`/privacidad`, `/condiciones`) necesitan la razón social y una revisión legal (WEB-03).
+- **Accesibilidad de la portada**: el diseño de reserva aprobado conserva la paleta y usa rosa oscuro
+  para la acción principal; axe incluye contraste en portada y páginas legales.
+- **Pendiente del cliente**: los textos legales (`/privacidad`, `/condiciones`) necesitan la razón social y
+  una revisión legal (WEB-03).
 
 - **shadcn/ui**: configuración en `components.json`, alias `@/` a `web/src/`. Componentes locales en
   `web/src/components/ui/`; skill del proyecto en `.agents/skills/shadcn/SKILL.md`. Usar esa skill al modificar
@@ -989,3 +990,7 @@ Lo específico de este repositorio: comandos de verificación, convenciones prop
 - **Páginas**: editar el JSX y la plantilla de cabecera en `web/src/pages/`, nunca el HTML generado en
   `web/public/`. `npm run build` prerenderiza las cuatro páginas y compila Tailwind. `npm run dev` observa
   `web/src/` y regenera ambos. Se conservan los IDs que usa `assets/main.js` y los contratos de las pruebas E2E.
+
+- **Reserva directa**: `BookingLink` (Button de shadcn con `asChild`) usa enlaces nativos a WhatsApp desde
+  `web/src/lib/booking.js`, sin exigir el formulario ni depender de JavaScript. Nunca mostrar una reserva
+  confirmada antes de acordarla con la clínica. La barra móvil respeta el área segura y no cubre el pie.

@@ -18,9 +18,7 @@ function navegacion() {
   if (!nav) return;
   const actualizar = () => {
     const abajo = window.scrollY > 20;
-    nav.classList.toggle('glass-effect', abajo);
-    nav.classList.toggle('shadow-xs', abajo);
-    nav.classList.toggle('bg-transparent', !abajo);
+    nav.dataset.scrolled = String(abajo);
   };
   window.addEventListener('scroll', actualizar, { passive: true });
   actualizar();
@@ -120,7 +118,7 @@ function formulario() {
   });
   contar();
 
-  // «Saber más» de cada servicio deja elegido ese servicio en el formulario
+  // La reserva directa también deja elegido el servicio en el formulario opcional
   document.querySelectorAll('[data-servicio]').forEach((enlace) => {
     enlace.addEventListener('click', () => {
       campos.servicio.value = enlace.dataset.servicio;

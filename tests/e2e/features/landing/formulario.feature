@@ -10,7 +10,7 @@ Característica: Formulario de contacto por WhatsApp
     Y escribo "+52 777 123 4567" en el campo "Teléfono"
     Y elijo el servicio "Cuidado de la Piel"
     Y escribo "¿Tienen citas el sábado? Precio & horario" en el campo "Mensaje"
-    Y pulso "Agendar Valoración"
+    Y pulso "Preparar mensaje en WhatsApp"
     Entonces se intenta abrir WhatsApp al "527772095094" con un mensaje que incluye:
       | *Nombre:* Ana María López                              |
       | *Teléfono:* +52 777 123 4567                           |
@@ -30,7 +30,7 @@ Característica: Formulario de contacto por WhatsApp
     Cuando escribo "Ana" en el campo "Nombre completo"
     Y escribo "7772095094" en el campo "Teléfono"
     Y escribo "Hola" en el campo "Mensaje"
-    Y pulso "Agendar Valoración"
+    Y pulso "Preparar mensaje en WhatsApp"
     Entonces puedo continuar con el mismo mensaje en WhatsApp
     Y el campo "Nombre completo" contiene "Ana"
     Y el campo "Teléfono" contiene "7772095094"
@@ -44,7 +44,7 @@ Característica: Formulario de contacto por WhatsApp
     Cuando escribo "Ana" en el campo "Nombre completo"
     Y escribo "7772095094" en el campo "Teléfono"
     Y escribo "Hola" en el campo "Mensaje"
-    Y pulso "Agendar Valoración"
+    Y pulso "Preparar mensaje en WhatsApp"
     Entonces hay un enlace para continuar en WhatsApp
     Y el campo "Mensaje" contiene "Hola"
     Y veo el aviso "No pudimos abrir WhatsApp. Usa «Continuar en WhatsApp» para enviar tu mensaje."
@@ -54,15 +54,15 @@ Característica: Formulario de contacto por WhatsApp
     Cuando escribo "Ana" en el campo "Nombre completo"
     Y escribo "7772095094" en el campo "Teléfono"
     Y escribo "Hola" en el campo "Mensaje"
-    Y pulso "Agendar Valoración"
-    Y pulso "Agendar Valoración"
+    Y pulso "Preparar mensaje en WhatsApp"
+    Y pulso "Preparar mensaje en WhatsApp"
     Entonces solo se intenta abrir una ventana de WhatsApp
     Y puedo continuar con el mismo mensaje en WhatsApp
 
   @validacion
   Escenario: Sin datos no se abre WhatsApp y cada campo explica qué falta
     Dado que abro el formulario de contacto
-    Cuando pulso "Agendar Valoración"
+    Cuando pulso "Preparar mensaje en WhatsApp"
     Entonces no se abre WhatsApp
     Y no aparece el enlace para continuar en WhatsApp
     Y el campo "Nombre completo" explica "Escribe tu nombre."
@@ -87,7 +87,7 @@ Característica: Formulario de contacto por WhatsApp
     Cuando escribo "Ana" en el campo "Nombre completo"
     Y escribo "777 12" en el campo "Teléfono"
     Y escribo "Hola" en el campo "Mensaje"
-    Y pulso "Agendar Valoración"
+    Y pulso "Preparar mensaje en WhatsApp"
     Entonces no se abre WhatsApp
     Y el campo "Teléfono" explica "El teléfono debe tener entre 8 y 15 dígitos."
 
@@ -136,7 +136,7 @@ Característica: Formulario de contacto por WhatsApp
       | Nombre completo | Ana123 Ma_ría  | Ana María  | El nombre solo admite letras    |
       | Teléfono        | 777abc209#5094 | 7772095094 | El teléfono solo admite números |
 
-  Escenario: «Saber más» de un servicio lo deja elegido en el formulario
+  Escenario: La reserva de un tratamiento también lo deja elegido en el formulario opcional
     Dado que abro la página "/"
-    Cuando pulso «Saber más» del servicio "Recuperación Postoperatoria"
+    Cuando agendo una valoración de "Recuperación Postoperatoria"
     Entonces el servicio elegido es "Recuperación Postoperatoria"

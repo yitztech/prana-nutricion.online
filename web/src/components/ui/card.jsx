@@ -8,7 +8,7 @@ function Card({ as: Comp = "div", variant = "default", className, ...props }) {
       data-variant={variant}
       className={cn(
         variant === "service"
-          ? "flex flex-col gap-6 rounded-3xl overflow-hidden bg-card text-card-foreground transition-all duration-500 hover:shadow-2xl hover:-translate-y-2"
+          ? "flex flex-col gap-3 text-card-foreground"
           : "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
         className,
       )}

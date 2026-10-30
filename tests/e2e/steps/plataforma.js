@@ -124,9 +124,6 @@ Then("axe no encuentra infracciones graves ni críticas", async ({ page }) => {
   await comprobarAxe(axe(page));
 });
 
-Then("axe no encuentra infracciones graves ni críticas salvo el contraste pendiente", async ({ page }) => {
-  await comprobarAxe(axe(page).disableRules(["color-contrast"]));
-});
 
 Then("axe no encuentra infracciones de contraste", async ({ page }) => {
   await comprobarAxe(axe(page).withRules(["color-contrast"]));
