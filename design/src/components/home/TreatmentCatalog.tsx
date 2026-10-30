@@ -61,7 +61,9 @@ function CategoryCard({ category, onOpen }: { category: Category; onOpen: (slug?
         <Button
           type="button"
           onClick={() => onOpen()}
-          className="bg-prana-boton mt-auto h-12 w-full rounded-full text-base font-semibold text-white shadow-soft hover:brightness-110"
+          variant="prana"
+          size="prana"
+          className="mt-auto w-full"
         >
           {category.cta}
           <ArrowRight className="size-4" />

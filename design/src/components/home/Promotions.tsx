@@ -67,7 +67,7 @@ function PromotionCard({ promotion }: { promotion: Promotion }) {
           origin="promocion"
           treatment={promotion.cta.treatment ?? `la promoción ${promotion.name}`}
           label={promotion.cta.label}
-          className="mt-5 h-11 w-full"
+          className="mt-5 w-full"
         />
       </div>
     </Card>
@@ -99,7 +99,7 @@ function EmptyPromotions() {
           origin="promociones-vacias"
           treatment="paquetes y promociones disponibles"
           label="Preguntar por promociones"
-          className="h-11 px-6"
+         
         />
         <Button
           type="button"

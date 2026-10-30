@@ -33,7 +33,7 @@ export function Contact() {
               Agenda tu valoración por WhatsApp. El equipo te ayuda a elegir el tratamiento y confirma
               contigo el día y la hora.
             </p>
-            <BookingButton origin="contacto" className="mt-6 h-12 px-7 text-base" />
+            <BookingButton origin="contacto" className="mt-6" />
             <p className="mt-8 text-sm font-semibold">Síguenos</p>
             <SocialLinks className="mt-3" />
           </div>

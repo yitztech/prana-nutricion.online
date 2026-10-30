@@ -96,7 +96,7 @@ function TreatmentDialog({ category, selectedSlug, onSelect, onOpenChange }: Tre
                   origin="ficha"
                   treatment={treatment.name}
                   label="Solicitar valoración"
-                  className="mt-7 h-11 w-full px-6 sm:w-auto"
+                  className="mt-7 w-full sm:w-auto"
                 />
                 <p className="mt-3 text-xs text-muted-foreground">
                   Se abre WhatsApp con tu mensaje listo. La clínica te confirma día y hora.

@@ -47,7 +47,9 @@ export function Philosophy() {
           </p>
           <Button
             asChild
-            className="bg-prana-boton mt-6 h-12 rounded-full px-7 text-base font-semibold text-white shadow-soft hover:brightness-110"
+            variant="prana"
+            size="prana"
+            className="mt-6"
           >
             <a href="#contacto">
               Conoce nuestra filosofía

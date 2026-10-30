@@ -18,7 +18,7 @@ export function MobileActionBar() {
             Llamar
           </a>
         </Button>
-        <BookingButton origin="barra-movil" label="WhatsApp" arrow={false} className="h-12 text-base [&_svg]:size-5" />
+        <BookingButton origin="barra-movil" label="WhatsApp" arrow={false} icon className="px-4 [&_svg]:size-5" />
       </div>
     </aside>
   );

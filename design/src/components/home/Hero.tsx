@@ -62,7 +62,7 @@ export function Hero() {
             increíble contigo.
           </p>
         </div>
-        <BookingButton origin="hero" className="mt-5 h-12 px-6 text-base md:mt-7 md:h-14 md:px-8 md:text-lg" />
+        <BookingButton origin="hero" className="mt-5 md:mt-7" />
 
         <ul className="mt-7 grid max-w-2xl grid-cols-3 gap-1.5 sm:gap-6 md:mt-10">
           {heroHighlights.map((item) => (

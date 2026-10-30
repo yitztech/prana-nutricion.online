@@ -109,13 +109,13 @@ export function Header() {
                 </ul>
               </nav>
               <div className="mt-auto p-4">
-                <BookingButton origin="menu-movil" className="h-11 w-full" />
+                <BookingButton origin="menu-movil" className="w-full" />
               </div>
             </SheetContent>
           </Sheet>
 
-          <BookingButton origin="cabecera" label="Agenda" arrow={false} size="sm" className="h-9 px-4 sm:hidden" />
-          <BookingButton origin="cabecera" arrow={false} className="hidden h-11 px-5 text-[0.95rem] sm:inline-flex" />
+          <BookingButton origin="cabecera" label="Agenda" arrow={false} size="prana-sm" className="h-9 px-4 sm:hidden" />
+          <BookingButton origin="cabecera" arrow={false} size="prana-sm" className="hidden sm:inline-flex" />
         </div>
       </div>
     </header>
