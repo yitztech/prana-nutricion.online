@@ -1,0 +1,123 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource/great-vibes/latin-400.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@font-face {
+  font-family: "Outfit";
+  src: url("./assets/fonts/outfit.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Playfair Display";
+  src: url("./assets/fonts/playfair-display.woff2") format("woff2");
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+/* Paleta del mockup (design/Mockup.png), oscurecida donde el texto blanco necesita 4.5:1. */
+:root {
+  --radius: 1rem;
+  --background: #fff8fb;
+  --foreground: #302b32;
+  --card: #ffffff;
+  --card-foreground: #302b32;
+  --popover: #ffffff;
+  --popover-foreground: #302b32;
+  --primary: #c8236e;
+  --primary-foreground: #ffffff;
+  --secondary: #fce7f0;
+  --secondary-foreground: #302b32;
+  --muted: #fdf0f5;
+  --muted-foreground: #5f5462;
+  --accent: #f7dce9;
+  --accent-foreground: #302b32;
+  --destructive: #b42318;
+  --border: #f3d5e3;
+  --input: #f0cadb;
+  --ring: #d93680;
+
+  --prana-rosa: #d93680;
+  --prana-intenso: #f0629b;
+  --prana-pastel: #f7dce9;
+  --prana-lila: #eed6f1;
+  --prana-lavanda: #a65ba8;
+}
+
+@theme inline {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --font-script: "Great Vibes", cursive;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-rosa: var(--prana-rosa);
+  --color-intenso: var(--prana-intenso);
+  --color-pastel: var(--prana-pastel);
+  --color-lila: var(--prana-lila);
+  --color-lavanda: var(--prana-lavanda);
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-soft: 0 10px 30px -12px rgb(200 35 110 / 0.22);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-serif;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility bg-prana-boton {
+  background-image: linear-gradient(90deg, #b81e66 0%, #d42f7a 100%);
+}
+@utility bg-prana-suave {
+  background-image: linear-gradient(135deg, #fff8fb 0%, #fce5ee 55%, #f6c9de 100%);
+}
+@utility bg-prana-banda {
+  background-image: linear-gradient(90deg, #fdeef5 0%, #fbe3ef 50%, #f6e3f5 100%);
+}
