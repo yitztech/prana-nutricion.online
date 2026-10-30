@@ -16,8 +16,11 @@ compose.ci.yml            # pruebas: el mismo compose con el gateway en 127.0.0.
 nginx/nginx.conf          # nginx sin root y de solo lectura, común a gateway y web
 gateway/                  # nginx delante de todo: IP real, cabeceras, X-Request-ID, /version.json, Umami
 web/
-  src/styles.css          # Tailwind CSS 4: tema (colores, fuentes) y utilidades propias
-  public/                 # la web: index.html, privacidad.html, condiciones.html, 404.html, robots, sitemap
+  src/styles.css          # Tailwind CSS 4: tema Prana y tokens de shadcn/ui
+  src/pages/              # JSX y plantillas HTML: portada, legales y 404
+  src/components/ui/      # componentes shadcn/ui locales
+  src/render.jsx          # React genera HTML estático, sin hidratación
+  public/                 # HTML generado, robots y sitemap
     assets/               # main.js, iconos.svg, fuentes/ e img/ (WebP)
   Dockerfile              # compila el CSS (Node) y sirve con nginx
 tests/e2e/                # escenarios en Gherkin (playwright-bdd): plataforma/ y landing/
@@ -35,7 +38,7 @@ Node 24.22 (`.nvmrc`) y Docker.
 
 ```bash
 npm ci
-npm run dev        # recompila el CSS al guardar; abrir web/public con cualquier servidor estático
+npm run dev        # regenera HTML y CSS al guardar web/src; servir web/public con un servidor estático
 npm test           # unitarias, reconstruye/recrea el compose y ejecuta los escenarios con su resumen
 npm test -- --reuse # reutiliza expresamente el compose saludable (puede contener código anterior)
 npm test -- --lista # muestra las suites; npm test -- unit o npm test -- e2e ejecuta solo una
@@ -75,7 +78,7 @@ Las reglas completas, y cómo se auditan, están en `docs/AUDITORIA.md` de infra
 Cada PR y cada push a `main` pasan por tres checks, los que exige la regla de `main`; solo si pasan, `main`
 publica en GHCR y despliega:
 
-1. **`Verificar`**: `npm ci`, `npm run test:unit`, build del CSS, `npm run check:audit`, hadolint,
+1. **`Verificar`**: `npm ci`, `npm run test:unit`, build de HTML y CSS, `npm run check:audit`, hadolint,
    [`reglas-compose.sh`](.github/scripts/reglas-compose.sh), prueba de humo con el compose de producción
    (`/healthz`, `/version.json`, cabeceras, ningún servicio como root) y Trivy sobre cada imagen.
 2. **`Escenarios`**: `npm run e2e` contra esas imágenes, en Chromium, Pixel 7 e iPhone 15 emulados.
@@ -106,3 +109,19 @@ Las acciones de terceros van fijadas por commit. Lo que la plataforma pone en el
   (`docs/OPERACION.md` §4.3 de infra-ionos-vps) y fijada en la ficha.
 - **Correo** `contacto@prana-nutricion.online` (con `info@` y `hola@`) en el Stalwart de la plataforma, y
   newsletter en `https://news.prana-nutricion.online` (Listmonk), aunque la web aún no los usa.
+
+## Componentes shadcn/ui
+
+La interfaz se compone con React 19 y componentes locales de shadcn/ui (base Radix), usando esbuild solo
+para el prerenderizado. El navegador recibe HTML estático, CSS y el JavaScript de navegación/WhatsApp;
+no descarga React. Las rutas, metadatos, JSON-LD, recursos locales y despliegue nginx se mantienen.
+
+Editar `web/src/pages/*.jsx` para el contenido y `web/src/pages/*.html` para las cabeceras. Los archivos
+`web/public/*.html` y `assets/styles.css` son generados por `npm run build` y no se versionan. Los tokens
+semánticos en `web/src/styles.css` conservan la paleta de Prana. `components.json` configura el CLI;
+`npx shadcn@latest info` muestra los componentes y `npx shadcn@latest docs <componente>` su documentación.
+
+La skill está incluida en [`.agents/skills/shadcn/SKILL.md`](.agents/skills/shadcn/SKILL.md), con sus reglas
+y referencias para que otros checkouts puedan usarla. Antes de añadir un componente interactivo con estado
+React, evaluar su necesidad de hidratación: los componentes actuales se prerenderizan y el comportamiento
+progresivo del menú y del formulario lo mantiene `web/public/assets/main.js`.

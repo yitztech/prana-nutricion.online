@@ -8,3 +8,7 @@ web/public/assets/styles.css
 # Resultados de las pruebas
 tests/e2e/results/
 tests/e2e/.features-gen/
+
+.build/
+# HTML prerenderizado desde web/src/pages
+web/public/*.html

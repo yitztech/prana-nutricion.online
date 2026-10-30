@@ -1,6 +1,6 @@
 /* Estilos de la web: Tailwind CSS 4 compilado en el build (web/Dockerfile). Nada se carga de terceros:
    fuentes, iconos e imágenes se sirven desde el propio dominio. */
-@import "tailwindcss" source("../public");
+@import "tailwindcss" source("../");
 
 @font-face {
   font-family: "Outfit";
@@ -29,7 +29,9 @@
 @theme {
   --color-blush: #fce7ea;
   --color-rose: #d49ca8;
+  --color-rose-ink: #a85063;
   --color-roseGold: #d3a59d;
+  --color-roseGold-ink: #a45549;
   --color-champagne: #faf6f2;
   --color-charcoal: #2d2d2d;
   --color-gold: #c4a47c;
@@ -56,13 +58,6 @@
   background: rgb(255 255 255 / 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-}
-
-@utility text-gradient {
-  background: linear-gradient(90deg, #d49ca8, #c4a47c);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 /* Fondo decorativo de la sección del testimonio (antes en un atributo style) */
@@ -105,4 +100,52 @@
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+/* Tokens shadcn/ui: la paleta de Prana se conserva en todos los componentes. */
+:root {
+  --background: #ffffff;
+  --foreground: #2d2d2d;
+  --card: #faf6f2;
+  --card-foreground: #2d2d2d;
+  --popover: #ffffff;
+  --popover-foreground: #2d2d2d;
+  --primary: #a85063;
+  --primary-foreground: #ffffff;
+  --secondary: #d49ca8;
+  --secondary-foreground: #2d2d2d;
+  --muted: #f9fafb;
+  --muted-foreground: #4b5563;
+  --accent: #d3a59d;
+  --accent-foreground: #a45549;
+  --destructive: #b91c1c;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #a85063;
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }

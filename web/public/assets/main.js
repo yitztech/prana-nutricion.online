@@ -79,6 +79,7 @@ function formulario() {
     p.textContent = texto || '';
     p.hidden = !texto;
     campo.dataset.origenError = texto ? origen : '';
+    campo.closest('[data-slot="field"]')?.setAttribute('data-invalid', String(Boolean(texto)));
     if (texto) campo.setAttribute('aria-invalid', 'true');
     else campo.removeAttribute('aria-invalid');
   };

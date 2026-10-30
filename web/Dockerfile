@@ -1,11 +1,13 @@
 # Web de Prana & Nutrición: una landing estática servida por nginx en el puerto 80.
-# El CSS se compila con Tailwind en una etapa de build; la imagen final solo lleva nginx y los archivos.
+# React prerenderiza el HTML y Tailwind compila el CSS; la imagen final solo lleva nginx y los archivos.
 FROM node:24.22-alpine3.24 AS build
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY web/ web/
+COPY jsconfig.json ./
+COPY scripts/build.mjs scripts/build.mjs
 RUN npm run build
 # Huella en el nombre del CSS y del JS: el navegador los guarda un año y cada cambio cambia el nombre
 WORKDIR /app/web/public

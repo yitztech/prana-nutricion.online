@@ -7,8 +7,8 @@
     "node": "24.22.0"
   },
   "scripts": {
-    "build": "tailwindcss -i web/src/styles.css -o web/public/assets/styles.css --minify",
-    "dev": "tailwindcss -i web/src/styles.css -o web/public/assets/styles.css --watch",
+    "build": "node scripts/build.mjs",
+    "dev": "node --watch --watch-path=web/src scripts/build.mjs",
     "test": "node scripts/test-all.mjs",
     "test:unit": "node --test tests/unit/*.test.mjs",
     "e2e": "bddgen -c tests/e2e/playwright.config.js && playwright test -c tests/e2e/playwright.config.js",
@@ -23,7 +23,16 @@
     "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.64.1",
     "@tailwindcss/cli": "4.3.3",
+    "esbuild": "0.28.2",
     "playwright-bdd": "9.2.1",
     "tailwindcss": "4.3.3"
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "radix-ui": "1.8.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwind-merge": "3.7.0"
   }
 }

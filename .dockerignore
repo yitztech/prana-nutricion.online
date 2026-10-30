@@ -10,3 +10,8 @@
 tests/
 scripts/
 compose*.yml
+
+# El build prerenderiza las páginas con este script
+!scripts/build.mjs
+.agents/
+.build/
