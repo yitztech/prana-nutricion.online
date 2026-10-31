@@ -147,7 +147,10 @@ describe("secretos", () => {
     await rejects(db.app.query("INSERT INTO admin_users (email, name, password_hash) VALUES ('a@b.mx', 'A', 'secreto en claro')"), "23514");
     const id = await newUser();
     const { rows: [row] } = await db.app.query("SELECT password_hash FROM admin_users WHERE id = $1", [id]);
-    assert.match(row.password_hash, /^\$argon2id\$v=19\$m=19456,t=2,p=1\$/);
+    // Formato PHC: el orden de los parámetros depende de la versión de la librería
+    const [, algorithm, version, params] = row.password_hash.split("$");
+    assert.deepEqual([algorithm, version], ["argon2id", "v=19"]);
+    assert.deepEqual(Object.fromEntries(params.split(",").map((p: string) => p.split("="))), { m: "19456", t: "2", p: "1" });
   });
 
   test("sesiones y enlaces de restablecimiento guardan el hash (32 bytes), nunca el token", async () => {
@@ -210,7 +213,8 @@ describe("integridad referencial", () => {
       "INSERT INTO uploads (purpose, width, height, widths, bytes) VALUES ('promocion', 1536, 1024, '{640,1024,1536}', 1000) RETURNING id");
     const { rows: [p] } = await db.app.query("SELECT id FROM promotions WHERE status = 'archived' LIMIT 1");
     await db.app.query("UPDATE promotions SET image_upload_id = $2, image_path = NULL WHERE id = $1", [p.id, upload.id]);
-    await rejects(db.app.query("DELETE FROM uploads WHERE id = $1", [upload.id]), "23503");
+    // ON DELETE RESTRICT responde restrict_violation (23001), no foreign_key_violation (23503)
+    await rejects(db.app.query("DELETE FROM uploads WHERE id = $1", [upload.id]), "23001");
   });
 
   test("borrar un tratamiento lo quita de las promociones que lo citan", async () => {
