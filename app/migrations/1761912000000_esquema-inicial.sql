@@ -1,4 +1,6 @@
 -- Up Migration
+-- Crea tablas vacías: sus índices no bloquean a nadie y la migración de vuelta borra lo que crea.
+-- squawk-ignore-file require-concurrent-index-creation, ban-drop-table, require-lock-timeout, require-statement-timeout
 -- Esquema inicial del editor del sitio. Los límites de longitud son los de shared/limits.ts
 -- (tests/db/limites.test.ts los compara). Fechas en timestamptz (UTC) y dinero en centavos de MXN.
 

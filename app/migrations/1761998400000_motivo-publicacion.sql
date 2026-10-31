@@ -5,11 +5,11 @@
 -- breve y la tabla, pequeña. node-pg-migrate ejecuta cada migración en una transacción.
 SET lock_timeout = '5s';
 SET statement_timeout = '15s';
--- squawk-ignore prefer-text-field, prefer-robust-stmts, changing-column-type
+-- squawk-ignore changing-column-type
 ALTER TABLE site_publications ALTER COLUMN reason TYPE varchar(255);
 
 -- Down Migration
 SET lock_timeout = '5s';
 SET statement_timeout = '15s';
--- squawk-ignore prefer-text-field, prefer-robust-stmts, changing-column-type
+-- squawk-ignore changing-column-type
 ALTER TABLE site_publications ALTER COLUMN reason TYPE varchar(50) USING left(reason, 50);

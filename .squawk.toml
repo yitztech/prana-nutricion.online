@@ -1,0 +1,8 @@
+# Squawk (AGENTS.md §39). Reglas que no aplican en este proyecto, con su motivo:
+# - prefer-text-field: §6.3 fija la longitud máxima de cada texto en la base de datos con varchar(n).
+#   Ampliar un varchar sigue avisando por changing-column-type, que se revisa caso a caso.
+# - prefer-bigint-over-int / prefer-bigint-over-smallint: los enteros son posiciones, cantidades y
+#   centavos acotados por un CHECK (shared/limits.ts); los identificadores son UUID.
+excluded_rules = ["prefer-text-field", "prefer-bigint-over-int", "prefer-bigint-over-smallint"]
+# node-pg-migrate ejecuta cada migración dentro de una transacción (singleTransaction en app/src/migrate.ts).
+assume_in_transaction = true
