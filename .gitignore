@@ -3,12 +3,11 @@
 !.env.example
 node_modules/
 .DS_Store
-# Generado por `npm run build` (en la imagen se compila en el build)
-web/public/assets/styles.css
+# Generado por `npm run build` y `npm run generar`
+web/dist/
 # Resultados de las pruebas
 tests/e2e/results/
 tests/e2e/.features-gen/
-
 .build/
-# HTML prerenderizado desde web/src/pages
-web/public/*.html
+# Temporales locales
+*.tmp.mjs
