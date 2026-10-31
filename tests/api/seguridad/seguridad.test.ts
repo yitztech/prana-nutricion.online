@@ -123,6 +123,22 @@ describe("inicio de sesión (§24)", () => {
     }
   });
 
+  test("cambiar la contraseña con una sesión también limita los intentos de la contraseña actual", async () => {
+    const cuenta = await nuevaCuenta();
+    try {
+      const { cliente } = await conSesion(cuenta);
+      const nueva = `nueva-${crypto.randomUUID()}`;
+      for (let i = 0; i < 5; i++) {
+        assert.equal((await cliente.post("/api/auth/password", { currentPassword: `mala-${i}`, newPassword: nueva })).status, 422);
+      }
+      const r = await cliente.post("/api/auth/password", { currentPassword: cuenta.password, newPassword: nueva });
+      assert.equal(r.status, 429);
+      assert.ok(Number(r.headers.get("retry-after")) > 0);
+    } finally {
+      await limpiarIntentos(cuenta.email);
+    }
+  });
+
   test("la cookie de sesión es HttpOnly, SameSite=Lax, Path=/ y no adivinable; cambia en cada inicio", async () => {
     const cuenta = await nuevaCuenta();
     const { cliente: primero } = await conSesion(cuenta);

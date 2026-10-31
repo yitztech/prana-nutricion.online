@@ -107,10 +107,14 @@ export const authRoutes = (deps: Deps) => async (app: FastifyInstance) => {
     if (requireUser(request, reply)) return reply;
     const input = parse(passwordChangeSchema, request.body);
     const user = request.user!;
+    // Adivinar la contraseña actual cuenta como un intento de inicio de sesión: mismo límite por IP y cuenta (§24).
+    await checkAttempts(pool, "login", request.realIp, user.email);
     const { rows: [row] } = await pool.query<{ password_hash: string }>("SELECT password_hash FROM admin_users WHERE id = $1", [user.id]);
     if (!row || !(await verifyPassword(row.password_hash, input.currentPassword))) {
+      await recordAttempt(pool, "login", request.realIp, user.email);
       throw validationFailed([{ field: "currentPassword", code: "invalid_credentials", message: "La contraseña actual no es correcta." }]);
     }
+    await clearAttempts(pool, "login", user.email);
     const passwordHash = await hashPassword(input.newPassword);
     const token = await transaction(pool, async (client) => {
       await client.query("UPDATE admin_users SET password_hash = $2, password_changed_at = now(), updated_at = now() WHERE id = $1", [user.id, passwordHash]);

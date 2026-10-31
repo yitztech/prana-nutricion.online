@@ -18,7 +18,7 @@ export function revisar(archivos) {
   return archivos.flatMap((archivo) => {
     const texto = readFileSync(archivo, "utf8");
     return [...servicios, etiqueta]
-      .filter((nombre) => new RegExp(`\\b${nombre.replace(/[.]/g, "\\.")}\\b`, "i").test(texto))
+      .filter((nombre) => new RegExp(`\\b${nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(texto))
       .map((nombre) => `${archivo}: menciona «${nombre}», que solo existe en pruebas`);
   });
 }
