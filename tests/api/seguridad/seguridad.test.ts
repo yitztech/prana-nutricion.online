@@ -178,6 +178,9 @@ describe("respuestas", () => {
       for (const h of ["content-security-policy", "strict-transport-security", "x-content-type-options", "x-frame-options", "referrer-policy"]) {
         assert.ok(r.headers.get(h), `${path}: falta ${h}`);
       }
+      // Una sola vez: el gateway las pone y oculta las del servicio de detrás
+      assert.equal(r.headers.get("x-content-type-options"), "nosniff", `${path}: nosniff repetida`);
+      assert.equal(r.headers.get("x-frame-options"), "DENY", `${path}: X-Frame-Options repetida`);
     }
     const api = await fetch(new URL("/api/health", BASE));
     assert.equal(api.headers.get("cache-control"), "no-store");

@@ -105,6 +105,7 @@ describe("longitudes (§6.3, las mismas que shared/limits.ts)", () => {
     ["promotion.offerLabel", "promotions", "offer_label"],
     ["promotion.includeLabel", "promotion_includes", "label"],
     ["promotion.discountLabel", "promotion_discounts", "label"],
+    ["publication.reason", "site_publications", "reason"],
   ];
   // Excepciones: la contraseña se guarda como hash; los textos del formulario de contacto no se guardan
   // (viajan en el mensaje de WhatsApp); el cuerpo legal es JSON y su límite lo aplica el esquema.

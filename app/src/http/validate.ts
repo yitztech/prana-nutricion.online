@@ -7,7 +7,8 @@ export function parse<T extends z.ZodType>(schema: T, value: unknown): z.output<
   if (value === undefined || value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new HttpProblem(400, "bad_request", "Envía un objeto JSON.");
   }
-  const result = schema.safeParse(value);
+  // reportInput: fieldErrors distingue un campo ausente de uno con el tipo equivocado
+  const result = schema.safeParse(value, { reportInput: true });
   if (!result.success) throw validationFailed(fieldErrors(result.error));
   return result.data;
 }

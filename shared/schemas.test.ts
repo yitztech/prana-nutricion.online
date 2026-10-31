@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { legalSeed } from "./seed/legal.ts";
-import { fieldErrors, isSafeHref, legalInputSchema, promotionInputSchema, richDocSchema, slugify, treatmentCreateSchema } from "./schemas.ts";
+import { fieldErrors, isSafeHref, legalInputSchema, loginSchema, promotionInputSchema, richDocSchema, slugify, treatmentCreateSchema } from "./schemas.ts";
 
 const promo = {
   status: "active",
@@ -28,6 +28,13 @@ test("rechaza campos desconocidos, fechas invertidas y apartado mayor que el pre
   assert.equal(result.success, false);
   const errors = fieldErrors(result.error!);
   assert.ok(errors.some((e) => e.code === "unknown_field" && e.field === "extra"), JSON.stringify(errors));
+});
+
+test("un campo ausente o null es required; uno con el tipo equivocado, invalid_format", () => {
+  const codes = (value: unknown) =>
+    fieldErrors(loginSchema.safeParse(value, { reportInput: true }).error!).map((e) => [e.field, e.code]);
+  assert.deepEqual(codes({}), [["email", "required"], ["password", "required"]]);
+  assert.deepEqual(codes({ email: null, password: 3 }), [["email", "required"], ["password", "invalid_format"]]);
 });
 
 test("una promoción vigente exige fin y botón; una archivada no", () => {

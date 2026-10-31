@@ -25,6 +25,8 @@ export const limits = {
     includeLabel: 80,
     discountLabel: 80,
   },
+  /** Motivo de una publicación del sitio: lo compone el servidor (acción e identificador). */
+  publication: { reason: 255 },
 } as const;
 
 /** Máximo de elementos de cada lista (§6.3). */

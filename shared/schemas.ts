@@ -254,11 +254,16 @@ export const adminNameSchema = z
 
 export const emailSchema = email;
 
-/** `errors[]` de Problem Details (§22) a partir de un error de zod. */
+/**
+ * `errors[]` de Problem Details (§22) a partir de un error de zod. zod 4 solo conserva `params` en los
+ * fallos `custom`: un campo ausente o `null` llega como `invalid_type` sin `input` y es `required`.
+ * Para distinguirlo de un tipo equivocado, se valida con `reportInput: true`.
+ */
 export function fieldErrors(error: z.ZodError) {
   return error.issues.map((item) => {
     const params = (item as { params?: { code?: string } }).params;
-    const code = params?.code ?? (item.code === "unrecognized_keys" ? "unknown_field" : item.code === "too_big" ? fieldCodes.tooLong : fieldCodes.invalidFormat);
+    const missing = item.code === "invalid_type" && (item as { input?: unknown }).input == null;
+    const code = params?.code ?? (missing ? fieldCodes.required : item.code === "unrecognized_keys" ? "unknown_field" : item.code === "too_big" ? fieldCodes.tooLong : fieldCodes.invalidFormat);
     const field = item.path.length ? item.path.join(".") : item.code === "unrecognized_keys" ? (item as { keys?: string[] }).keys?.join(",") ?? "" : "";
     const message = item.code === "unrecognized_keys" ? "Campo no permitido." : item.message;
     return { field, code, message };
