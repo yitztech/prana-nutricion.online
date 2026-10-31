@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, describe, test } from "node:test";
-import { BASE, cerrar, Cliente, COOKIE, conSesion, db, documento, limpiarIntentos, nuevaCuenta } from "../support/cliente.ts";
+import { ADMIN, BASE, cerrar, Cliente, COOKIE, conSesion, db, documento, limpiarIntentos, nuevaCuenta } from "../support/cliente.ts";
 import { promocion } from "../support/contenido.ts";
 
 after(cerrar);
@@ -51,7 +51,9 @@ describe("CSRF (§24)", () => {
   test("una escritura sin origen, de otro origen o sin la cabecera del editor: 403", async () => {
     const { cliente } = await conSesion();
     const body = { title: "Aviso", body: documento("x") };
-    for (const opciones of [{ origin: null }, { origin: "https://evil.example" }, { origin: "null" }, { editor: false }]) {
+    // El sitio público tampoco: solo el dominio del editor escribe.
+    const sitio = new URL(BASE).origin;
+    for (const opciones of [{ origin: null }, { origin: "https://evil.example" }, { origin: "null" }, { origin: sitio }, { editor: false }]) {
       const r = await cliente.pedir("PUT", "/api/admin/legal/privacidad", { body, ...opciones });
       assert.equal(r.status, 403, JSON.stringify(opciones));
       assert.equal(r.body.code, "forbidden_origin");
@@ -148,7 +150,8 @@ describe("inicio de sesión (§24)", () => {
     assert.match(cookie, /Path=\//);
     assert.doesNotMatch(cookie, /Domain=/i);
     // Por https (producción) la cookie es __Host- y Secure; el entorno local va por http.
-    if (BASE.startsWith("https:")) assert.match(cookie, /Secure/);
+    if (ADMIN.startsWith("https:")) assert.match(cookie, /^__Host-/);
+    if (ADMIN.startsWith("https:")) assert.match(cookie, /Secure/);
     assert.match(primero.sesion!, /^[A-Za-z0-9_-]{43}$/);
     const { cliente: segundo } = await conSesion(cuenta);
     assert.notEqual(segundo.sesion, primero.sesion);
@@ -189,8 +192,9 @@ describe("respuestas", () => {
   });
 
   test("cabeceras de seguridad en el sitio, la API y el editor", async () => {
-    for (const path of ["/", "/api/health", "/admin/"]) {
-      const r = await fetch(new URL(path, BASE));
+    for (const url of [new URL("/", BASE), new URL("/api/health", BASE), new URL("/", ADMIN), new URL("/api/health", ADMIN)]) {
+      const path = url.href;
+      const r = await fetch(url);
       for (const h of ["content-security-policy", "strict-transport-security", "x-content-type-options", "x-frame-options", "referrer-policy"]) {
         assert.ok(r.headers.get(h), `${path}: falta ${h}`);
       }
@@ -201,8 +205,20 @@ describe("respuestas", () => {
     const api = await fetch(new URL("/api/health", BASE));
     assert.equal(api.headers.get("cache-control"), "no-store");
     assert.ok(api.headers.get("x-request-id"));
-    const admin = await fetch(new URL("/admin/", BASE));
-    assert.doesNotMatch(admin.headers.get("content-security-policy") ?? "", /stats\./, "el editor no carga analítica");
+  });
+
+  test("el editor tiene su propia CSP, sin analítica, y no comparte cabeceras con el sitio", async () => {
+    for (const path of ["/", "/restablecer", "/robots.txt"]) {
+      const r = await fetch(new URL(path, ADMIN));
+      const csp = r.headers.get("content-security-policy") ?? "";
+      assert.doesNotMatch(csp, /stats\.|https:/, `${path}: el editor no carga terceros ni analítica`);
+      assert.match(csp, /connect-src 'self'/, path);
+      assert.match(csp, /img-src 'self' data: blob:/, path);
+      assert.equal(r.headers.get("referrer-policy"), "no-referrer", path);
+      assert.equal(r.headers.get("x-robots-tag"), "noindex, nofollow", path);
+    }
+    const panel = await (await fetch(new URL("/", ADMIN))).text();
+    assert.doesNotMatch(panel, /data-website-id/, "sin script de Umami en el panel");
   });
 
   test("el gateway no deja elegir el X-Request-ID", async () => {

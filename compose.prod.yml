@@ -34,6 +34,8 @@ services:
     environment:
       # Subred de la red de esta app donde está Traefik (se mide tras el primer arranque)
       TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:?Define la subred de Traefik}
+      # Dominio del editor: el panel y su API solo responden en este host (17-admin.sh)
+      ADMIN_URL: ${ADMIN_URL:-https://admin.prana-nutricion.online}
       # Analítica con Umami (vacío = sin analítica). Las pone el alta del cliente.
       UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
       UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
@@ -77,6 +79,8 @@ services:
       APP_DB_USER: prana_app
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Define APP_DB_PASSWORD}
       SITE_URL: ${SITE_URL:?Define SITE_URL}
+      # Origen del editor: CSRF y enlaces de los correos del editor. El mismo que recibe el gateway.
+      ADMIN_URL: ${ADMIN_URL:-https://admin.prana-nutricion.online}
       SMTP_HOST: ${SMTP_HOST:?Define SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT:?Define SMTP_PORT}
       SMTP_SECURE: ${SMTP_SECURE:-true}

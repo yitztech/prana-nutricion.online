@@ -55,7 +55,8 @@ export async function buildServer(deps: Deps): Promise<FastifyInstance> {
     return503OnClosing: true,
   });
 
-  const origins = new Set([config.SITE_URL, ...(config.extraOrigins ?? [])]);
+  // El editor y su API viven en su propio dominio (ADMIN_URL); el sitio público no escribe nada.
+  const origins = new Set([config.ADMIN_URL, ...(config.extraOrigins ?? [])]);
 
   await app.register(cookie);
   await app.register(multipart, {
@@ -74,7 +75,7 @@ export async function buildServer(deps: Deps): Promise<FastifyInstance> {
     request.realIp = typeof real === "string" && /^[0-9a-fA-F.:]{2,45}$/.test(real) ? real : request.ip;
   });
 
-  // Protección CSRF (§24): toda escritura llega del propio dominio y con la cabecera del editor.
+  // Protección CSRF (§24): toda escritura llega del dominio del editor y con su cabecera.
   app.addHook("onRequest", async (request, reply) => {
     if (!UNSAFE.has(request.method) || !request.url.startsWith("/api/")) return;
     const origin = request.headers.origin;

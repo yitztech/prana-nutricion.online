@@ -77,7 +77,7 @@ export const authRoutes = (deps: Deps) => async (app: FastifyInstance) => {
       await pool.query(
         "INSERT INTO password_reset_tokens (token_hash, user_id, expires_at) VALUES ($1, $2, now() + interval '1 hour')", [hash, user.id]);
       // El token va en el fragmento: no llega al servidor ni a los logs al abrir el enlace.
-      await mailer.send(mails.passwordReset(user.email, `${config.SITE_URL}/admin/restablecer#token=${token}`));
+      await mailer.send(mails.passwordReset(user.email, `${config.ADMIN_URL}/restablecer#token=${token}`));
       await audit(pool, user.id, "password_reset_requested", "admin_user", user.id);
     }
     return reply.code(202).send({ detail: "Si el correo tiene una cuenta, te enviamos un enlace para restablecer la contraseña." });
@@ -99,7 +99,7 @@ export const authRoutes = (deps: Deps) => async (app: FastifyInstance) => {
       return row;
     });
     if (!user) throw validationFailed([{ field: "token", code: "invalid_token", message: "El enlace no es válido o ha caducado. Pide uno nuevo." }]);
-    await mailer.send(mails.passwordChanged(user.email, config.SITE_URL));
+    await mailer.send(mails.passwordChanged(user.email, config.ADMIN_URL));
     return reply.code(204).send();
   });
 
@@ -123,7 +123,7 @@ export const authRoutes = (deps: Deps) => async (app: FastifyInstance) => {
       return createSession(client, user.id);
     });
     setSessionCookie(deps, reply, token);
-    await mailer.send(mails.passwordChanged(user.email, config.SITE_URL));
+    await mailer.send(mails.passwordChanged(user.email, config.ADMIN_URL));
     return reply.code(204).send();
   });
 };

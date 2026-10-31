@@ -1,0 +1,12 @@
+# Rutas de la plataforma (§20), iguales en todos los dominios del gateway.
+location = /healthz {
+    add_header Content-Type text/plain;
+    return 200 'ok';
+}
+
+# Commit desplegado: el workflow lo consulta para saber que la versión nueva ya sirve
+location = /version.json {
+    add_header Content-Type application/json;
+    add_header Cache-Control "no-store";
+    return 200 '{"revision":"${RELEASE_SHA}"}';
+}

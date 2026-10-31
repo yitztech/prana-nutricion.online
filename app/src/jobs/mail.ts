@@ -82,7 +82,7 @@ export const mails = {
       "Si no lo pediste, ignora este correo: tu contraseña no cambia.",
     ].join("\n"),
   }),
-  passwordChanged: (to: string, siteUrl: string): Mail => ({
+  passwordChanged: (to: string, adminUrl: string): Mail => ({
     to,
     subject: "Tu contraseña del editor de Praná cambió",
     text: [
@@ -90,7 +90,7 @@ export const mails = {
       "",
       "La contraseña de tu cuenta del editor del sitio de Praná: Nutrición y Bienestar acaba de cambiar y se cerraron todas las sesiones abiertas.",
       "",
-      `Si no fuiste tú, restablécela desde ${siteUrl}/admin/ y avisa a quien administra el sitio.`,
+      `Si no fuiste tú, restablécela desde ${adminUrl}/ y avisa a quien administra el sitio.`,
     ].join("\n"),
   }),
 };

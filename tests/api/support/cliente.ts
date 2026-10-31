@@ -1,6 +1,8 @@
 /**
  * Cliente de la API real para test:api, test:endpoints y test:security (AGENTS.md §39): habla con el
  * gateway del compose de pruebas, guarda la cookie de sesión y manda el origen y la cabecera del editor.
+ * Dos dominios, como en producción: el sitio público (BASE) y el editor con su API (ADMIN). En local
+ * son http://127.0.0.1:8091 y http://localhost:8091: hosts distintos, también para las cookies.
  * Las cuentas se crean directamente en PostgreSQL (puerto de pruebas), una por escenario.
  */
 import { randomBytes, randomUUID } from "node:crypto";
@@ -8,6 +10,7 @@ import pg from "pg";
 import { hashPassword } from "../../../app/src/auth/passwords.ts";
 
 export const BASE = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${process.env.E2E_PUERTO ?? "8091"}`;
+export const ADMIN = process.env.E2E_ADMIN_URL ?? `http://localhost:${process.env.E2E_PUERTO ?? "8091"}`;
 export const MAILPIT = process.env.E2E_MAILPIT_URL ?? `http://127.0.0.1:${process.env.E2E_MAILPIT_PUERTO ?? "8025"}`;
 export const COOKIE = process.env.E2E_COOKIE ?? "prana_sesion";
 const PG_URL = process.env.TEST_PG_URL_APP ?? "postgres://postgres:ci-postgres-solo-pruebas@127.0.0.1:54329/prana";
@@ -36,9 +39,16 @@ export class Cliente {
   sesion: string | null = null;
   setCookies: string[] = [];
 
+  readonly base: string;
+
+  /** Por defecto, el dominio del editor; `new Cliente(BASE)` para el sitio público. */
+  constructor(base = ADMIN) {
+    this.base = base;
+  }
+
   async pedir(method: string, path: string, opciones: Opciones = {}): Promise<Respuesta> {
     const headers: Record<string, string> = { ...opciones.headers };
-    if (opciones.origin !== null) headers.origin = opciones.origin ?? BASE;
+    if (opciones.origin !== null) headers.origin = opciones.origin ?? new URL(this.base).origin;
     if (opciones.editor !== false) headers["x-requested-with"] = "prana-admin";
     if (this.sesion) headers.cookie = `${COOKIE}=${this.sesion}`;
     let body: FormData | string | undefined;
@@ -47,7 +57,7 @@ export class Cliente {
       headers["content-type"] ??= "application/json";
       body = typeof opciones.body === "string" ? opciones.body : JSON.stringify(opciones.body);
     }
-    const response = await fetch(new URL(path, BASE), { method, headers, body, redirect: "manual" });
+    const response = await fetch(new URL(path, this.base), { method, headers, body, redirect: "manual" });
     this.setCookies = response.headers.getSetCookie();
     for (const cookie of this.setCookies) {
       const [pair] = cookie.split(";");

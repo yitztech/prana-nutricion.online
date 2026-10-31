@@ -74,5 +74,5 @@ test("categorías, legales y sitemap coherentes con el contenido", () => {
     assert.ok(read(`${slug}.html`).includes(content.legal[slug].title));
   }
   assert.ok(!sitemap.includes("/404"));
-  assert.match(read("robots.txt"), /Disallow: \/admin\//);
+  assert.doesNotMatch(read("robots.txt"), /admin/, "el editor tiene su propio dominio");
 });

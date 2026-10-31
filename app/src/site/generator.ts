@@ -44,7 +44,7 @@ export async function generateSite({ content, webDist, siteDir, siteUrl, rendere
   }
   const indexable = pages.filter((page) => page.path !== "/404");
   await writeFile(join(release, "sitemap.xml"), sitemap(indexable.map((page) => new URL(page.path, siteUrl).href)));
-  await writeFile(join(release, "robots.txt"), `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\n\nSitemap: ${new URL("/sitemap.xml", siteUrl).href}\n`);
+  await writeFile(join(release, "robots.txt"), `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${new URL("/sitemap.xml", siteUrl).href}\n`);
   await writeFile(join(release, "release.json"), JSON.stringify({ id, generatedOn: content.generatedOn, pages: pages.length }));
 
   // Cambio atómico del enlace: rename sustituye `current` en una sola operación.
