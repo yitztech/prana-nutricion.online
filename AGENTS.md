@@ -991,6 +991,9 @@ Lo específico de este repositorio: comandos de verificación, convenciones prop
   `web/public/`. `npm run build` prerenderiza las cuatro páginas y compila Tailwind. `npm run dev` observa
   `web/src/` y regenera ambos. Se conservan los IDs que usa `assets/main.js` y los contratos de las pruebas E2E.
 
+- **Editor**: en `admin.prana-nutricion.online` (`ADMIN_URL`), nunca en `/admin` del sitio público. Sin
+  analítica, `noindex` y con su CSP (`gateway/snippets/admin-headers.conf`). Sus pruebas usan los dos dominios.
+
 - **Reserva directa**: `BookingLink` (Button de shadcn con `asChild`) usa enlaces nativos a WhatsApp desde
   `web/src/lib/booking.js`, sin exigir el formulario ni depender de JavaScript. Nunca mostrar una reserva
   confirmada antes de acordarla con la clínica. La barra móvil respeta el área segura y no cubre el pie.

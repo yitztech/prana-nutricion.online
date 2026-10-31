@@ -18,8 +18,10 @@ RUN apk upgrade --no-cache brotli-libs curl libcurl \
  && rm /etc/nginx/conf.d/default.conf
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY gateway/snippets/ /etc/nginx/snippets/
-COPY gateway/default.conf.template /etc/nginx/templates/nginx/default.conf.template
+COPY gateway/templates/default.conf.template /etc/nginx/templates/nginx/default.conf.template
+COPY gateway/templates/platform-routes.conf.template /etc/nginx/templates/nginx/snippets/platform-routes.conf.template
 COPY --chmod=755 gateway/16-analytics.sh /docker-entrypoint.d/16-analytics.sh
+COPY --chmod=755 gateway/17-admin.sh /docker-entrypoint.d/17-admin.sh
 
 # Sin root: Docker deja a cualquier usuario escuchar en el 80 (ip_unprivileged_port_start=0).
 # 101 es nginx en la imagen oficial; numérico para que hadolint no lo rechace (DL3066)

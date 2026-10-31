@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { limits } from "#shared/limits.ts";
-import { cerrar, Cliente, conSesion, documento, type Respuesta } from "../support/cliente.ts";
+import { ADMIN, BASE, cerrar, Cliente, conSesion, documento, type Respuesta } from "../support/cliente.ts";
 import { categoria, formulario, foto, promocion } from "../support/contenido.ts";
 
 let cliente: Cliente;
@@ -28,17 +28,19 @@ function campo(r: Respuesta, field: string, code: string) {
 }
 
 describe("salud y versión (§20)", () => {
-  test("/api/health responde ok sin datos internos", async () => {
-    const r = await new Cliente().get("/api/health");
-    assert.equal(r.status, 200);
-    assert.deepEqual(r.body, { status: "ok" });
-  });
+  for (const [dominio, base] of [["sitio", BASE], ["editor", ADMIN]]) {
+    test(`/api/health responde ok sin datos internos (${dominio})`, async () => {
+      const r = await new Cliente(base).get("/api/health");
+      assert.equal(r.status, 200);
+      assert.deepEqual(r.body, { status: "ok" });
+    });
 
-  test("/version.json da la revisión", async () => {
-    const r = await new Cliente().get("/version.json");
-    assert.equal(r.status, 200);
-    assert.equal(typeof r.body.revision, "string");
-  });
+    test(`/version.json da la revisión (${dominio})`, async () => {
+      const r = await new Cliente(base).get("/version.json");
+      assert.equal(r.status, 200);
+      assert.equal(typeof r.body.revision, "string");
+    });
+  }
 
   test("una ruta de la API que no existe es un 404 con Problem Details", async () => {
     problema(await cliente.get("/api/no-existe"), 404, "not_found");
@@ -188,7 +190,7 @@ describe("imágenes (§29)", () => {
 
 describe("sitio publicado", () => {
   test("rutas públicas: portada, categorías, legales, robots y sitemap", async () => {
-    const anonimo = new Cliente();
+    const anonimo = new Cliente(BASE);
     for (const path of ["/", "/privacidad", "/condiciones", "/robots.txt", "/sitemap.xml"]) {
       assert.equal((await anonimo.get(path)).status, 200, path);
     }
@@ -197,20 +199,61 @@ describe("sitio publicado", () => {
   });
 
   test("una página que no existe es el 404 del sitio", async () => {
-    const r = await new Cliente().get("/no-existe");
+    const r = await new Cliente(BASE).get("/no-existe");
     assert.equal(r.status, 404);
     assert.match(r.text, /<html lang="es"/);
   });
 
   test("no se publican datos internos de la generación", async () => {
-    assert.equal((await new Cliente().get("/release.json")).status, 404);
-    assert.equal((await new Cliente().get("/uploads/../../etc/passwd")).status, 404);
+    assert.equal((await new Cliente(BASE).get("/release.json")).status, 404);
+    assert.equal((await new Cliente(BASE).get("/uploads/../../etc/passwd")).status, 404);
   });
 
-  test("el editor se sirve sin caché y fuera de los buscadores", async () => {
-    const r = await new Cliente().get("/admin/");
-    assert.equal(r.status, 200);
-    assert.equal(r.headers.get("cache-control"), "no-store");
-    assert.match(r.headers.get("x-robots-tag") ?? "", /noindex/);
+});
+
+describe("dos dominios: sitio y editor", () => {
+  test("el sitio público ya no sirve el editor: /admin es su página 404", async () => {
+    for (const path of ["/admin", "/admin/", "/admin/restablecer", "/admin/index.html"]) {
+      const r = await new Cliente(BASE).get(path);
+      assert.equal(r.status, 404, path);
+      assert.match(r.text, /<html lang="es"/, path);
+      assert.doesNotMatch(r.text, /Editor del sitio/, path);
+    }
+  });
+
+  test("el sitio público no expone la API del editor", async () => {
+    const sitio = new Cliente(BASE);
+    for (const [method, path] of [["GET", "/api/auth/session"], ["GET", "/api/admin/legal"], ["POST", "/api/auth/login"], ["POST", "/api/admin/uploads"]]) {
+      const r = await sitio.pedir(method, path, { body: method === "POST" ? {} : undefined });
+      assert.equal(r.status, 404, `${method} ${path}`);
+      assert.match(r.headers.get("content-type") ?? "", /^application\/problem\+json/);
+      assert.equal(r.body.code, "not_found");
+      assert.equal(r.headers.get("cache-control"), "no-store");
+    }
+  });
+
+  test("el editor se sirve en la raíz de su dominio, sin caché y fuera de los buscadores", async () => {
+    for (const path of ["/", "/restablecer"]) {
+      const r = await new Cliente(ADMIN).get(path);
+      assert.equal(r.status, 200, path);
+      assert.match(r.text, /Editor del sitio/, path);
+      assert.equal(r.headers.get("cache-control"), "no-store", path);
+      assert.equal(r.headers.get("x-robots-tag"), "noindex, nofollow", path);
+    }
+    const robots = await new Cliente(ADMIN).get("/robots.txt");
+    assert.equal(robots.status, 200);
+    assert.match(robots.text, /Disallow: \/\n/);
+  });
+
+  test("el editor carga sus recursos desde su propio dominio", async () => {
+    const editor = new Cliente(ADMIN);
+    const html = (await editor.get("/")).text;
+    const recursos = [...html.matchAll(/(?:src|href)="(\/[^"]+)"/g)].map((m) => m[1]);
+    assert.ok(recursos.some((r) => r.startsWith("/assets/")), "sin JS ni CSS del build");
+    for (const recurso of recursos) {
+      const r = await editor.get(recurso);
+      assert.equal(r.status, 200, recurso);
+      assert.doesNotMatch(r.headers.get("content-type") ?? "", /text\/html/, `${recurso} no debe ser el panel`);
+    }
   });
 });

@@ -14,7 +14,7 @@ AGENTS.md, CLAUDE.md      # estándares de desarrollo; lo propio del proyecto, a
 compose.prod.yml          # producción en Coolify: gateway + web
 compose.ci.yml            # pruebas: el mismo compose con el gateway en 127.0.0.1:8091
 nginx/nginx.conf          # nginx sin root y de solo lectura, común a gateway y web
-gateway/                  # nginx delante de todo: IP real, cabeceras, X-Request-ID, /version.json, Umami
+gateway/                  # nginx delante de todo: reparte por dominio (sitio y editor), IP real, cabeceras, X-Request-ID, /version.json, Umami
 web/
   src/styles.css          # Tailwind CSS 4: tema Prana y tokens de shadcn/ui
   src/pages/              # JSX y plantillas HTML: portada, legales y 404
@@ -105,6 +105,12 @@ Las acciones de terceros van fijadas por commit. Lo que la plataforma pone en el
 - **Umami**: ambas variables vacías desactivan la analítica. Si se activa, las dos son obligatorias:
   `UMAMI_SCRIPT_URL=https://stats.yunitztech.com/script.js` y `UMAMI_WEBSITE_ID` con formato UUID.
   Una configuración parcial o inválida impide el arranque del gateway.
+- **Editor en su propio dominio**: `ADMIN_URL` (por defecto `https://admin.prana-nutricion.online`). El gateway
+  sirve el panel y la API del editor solo en ese host; el dominio público responde 404 en `/admin` y en `/api/`,
+  salvo `/api/health`. La app solo acepta escrituras con ese `Origin` (CSRF), los correos de contraseña enlazan
+  allí y la cookie `__Host-` (sin `Domain`) nunca llega al sitio público. El DNS y el dominio en Coolify/Traefik
+  (al servicio `gateway`, puerto 80) los pone el alta en infra-ionos-vps. En local, el sitio es
+  `http://127.0.0.1:8091` y el editor `http://localhost:8091` (`E2E_ADMIN_URL` para otro destino).
 - **`TRUSTED_PROXY_CIDR`**: la subred de Traefik en la red de la app, medida tras el primer arranque
   (`docs/OPERACION.md` §4.3 de infra-ionos-vps) y fijada en la ficha.
 - **Correo** `contacto@prana-nutricion.online` (con `info@` y `hola@`) en el Stalwart de la plataforma, y

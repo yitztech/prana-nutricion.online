@@ -21,6 +21,8 @@ const databaseSchema = z.object({
 const serviceSchema = databaseSchema.extend({
   PORT: port.default(3000),
   SITE_URL: z.url({ protocol: /^https?$/ }).transform((value) => new URL(value).origin),
+  /** Origen del editor (admin.<dominio>): el único desde el que se aceptan escrituras (CSRF, §24). */
+  ADMIN_URL: z.url({ protocol: /^https?$/ }).transform((value) => new URL(value).origin),
   SMTP_HOST: nonEmpty,
   SMTP_PORT: port,
   SMTP_SECURE: flag,

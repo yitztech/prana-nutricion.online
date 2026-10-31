@@ -141,6 +141,14 @@ jobs:
             printf '%s\n' "$cabeceras" | grep -qi "^ *$c:" || { echo "::error::Falta la cabecera $c"; exit 1; }
           done
 
+          # El editor solo en su dominio (ADMIN_URL por defecto en compose.prod.yml)
+          admin="Host: admin.prana-nutricion.online"
+          gw wget -qO- --header "$admin" http://127.0.0.1/ | grep -q 'Editor del sitio' || { echo "::error::El dominio del editor no sirve el panel"; exit 1; }
+          gw wget -qS -O /dev/null --header "$admin" http://127.0.0.1/ 2>&1 | grep -qi '^ *X-Robots-Tag: noindex' || { echo "::error::El editor no lleva X-Robots-Tag"; exit 1; }
+          [ "$(gw wget -qO- --header "$admin" http://127.0.0.1/api/health | jq -r .status)" = "ok" ] || { echo "::error::/api/health no responde en el editor"; exit 1; }
+          ! gw wget -q -O /dev/null http://127.0.0.1/admin/ || { echo "::error::El sitio público sirve /admin/"; exit 1; }
+          ! gw wget -q -O /dev/null http://127.0.0.1/api/auth/session || { echo "::error::El sitio público expone la API del editor"; exit 1; }
+
           # El proceso principal de cada contenedor (PostgreSQL arranca como root y baja a postgres)
           for s in $(docker compose -f compose.prod.yml ps --services --status running); do
             pid=$(docker inspect --format '{{.State.Pid}}' "$(docker compose -f compose.prod.yml ps -q "$s")")
@@ -316,13 +324,25 @@ jobs:
         run: npm run test:security
       # Falla con cualquier aviso nuevo (AUDITORIA SEG-08); las excepciones, con su motivo, en
       # tests/security/zap-reglas.tsv. El informe queda como artefacto zap_scan
-      - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+      # Dos dominios (compose.ci.yml): el sitio en 127.0.0.1 y el editor en localhost
+      - name: ZAP (sitio)
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: http://127.0.0.1:8091
+          docker_name: ghcr.io/zaproxy/zaproxy:2.17.0
+          rules_file_name: tests/security/zap-reglas.tsv
+          allow_issue_writing: false
+          fail_action: true
+      - name: ZAP (editor)
+        if: ${{ !cancelled() }}
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
           target: http://localhost:8091
           docker_name: ghcr.io/zaproxy/zaproxy:2.17.0
           rules_file_name: tests/security/zap-reglas.tsv
           allow_issue_writing: false
           fail_action: true
+          artifact_name: zap_scan_editor
       - run: docker compose -f compose.prod.yml -f compose.ci.yml --profile pruebas down -v
         if: always()
 
