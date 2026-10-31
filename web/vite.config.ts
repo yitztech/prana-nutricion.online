@@ -31,7 +31,19 @@ export default defineConfig(({ isSsrBuild }) => ({
         },
   },
   server: {
-    // `npm run dev` con el servicio en marcha (docker compose): el admin habla con su API.
-    proxy: { "/api": process.env.VITE_API_URL ?? "http://127.0.0.1:8091" },
+    // `npm run dev` con el servicio en marcha (docker compose): el admin (/admin/) habla con la API del
+    // dominio del editor local (localhost:8091). El Origin se reescribe a ese dominio para que la
+    // protección CSRF acepte las escrituras, como si el panel se sirviera desde el gateway.
+    proxy: {
+      "/api": {
+        target: process.env.VITE_API_URL ?? "http://localhost:8091",
+        changeOrigin: true,
+        configure: (proxy, options) => {
+          proxy.on("proxyReq", (request) => {
+            if (request.getHeader("origin")) request.setHeader("origin", new URL(String(options.target)).origin);
+          });
+        },
+      },
+    },
   },
 }));
