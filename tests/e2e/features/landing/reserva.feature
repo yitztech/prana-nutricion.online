@@ -5,35 +5,35 @@ Característica: Agendar una valoración sin completar el formulario
 
   @smoke
   Escenario: La primera pantalla permite agendar directamente
-    Dado que abro la página "/"
+    Dado que abro la portada sin movimiento automático
     Entonces la primera pantalla ofrece agendar mi valoración
-    Cuando abro la reserva rápida de "hero"
+    Cuando abro la reserva de la primera pantalla
     Entonces WhatsApp prepara una valoración sin datos obligatorios
 
   Esquema del escenario: Cada tratamiento prepara su propia solicitud
-    Dado que abro la página "/"
-    Cuando agendo una valoración de "<servicio>"
-    Entonces WhatsApp prepara una valoración de "<servicio>"
+    Dado que abro directamente "<página>"
+    Cuando agendo una valoración de "<tratamiento>"
+    Entonces WhatsApp prepara una valoración de "<tratamiento>"
 
     Ejemplos:
-      | servicio                     |
-      | Nutrición Moldeadora          |
-      | Cuidado de la Piel            |
-      | Recuperación Postoperatoria   |
+      | página                          | tratamiento     |
+      | /tratamientos/reductivos/       | Mini Lipo       |
+      | /tratamientos/corporales/       | Carboxiterapia  |
+      | /tratamientos/depilacion-laser/ | Cuerpo completo |
 
   @FE-05 @FE-09
   Escenario: En móvil la reserva está disponible mientras recorro la página
     Dado que abro la portada en un móvil
-    Entonces la barra de reserva móvil queda a la vista
+    Entonces la barra de contacto rápido queda a la vista
     Cuando llego al final de la portada
-    Entonces la barra de reserva móvil queda a la vista
+    Entonces la barra de contacto rápido queda a la vista
     Y puedo acceder a los enlaces legales sin que la barra los cubra
-    Cuando abro la reserva rápida de "mobile"
+    Cuando abro la reserva de la barra de contacto rápido
     Entonces WhatsApp prepara una valoración sin datos obligatorios
 
   Escenario: La reserva directa funciona sin el JavaScript de la página
     Dado que abro la portada sin su JavaScript
-    Cuando abro la reserva rápida de "hero"
+    Cuando abro la reserva de la primera pantalla
     Entonces WhatsApp prepara una valoración sin datos obligatorios
 
   @FE-09

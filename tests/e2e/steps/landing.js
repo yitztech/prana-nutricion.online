@@ -2,6 +2,7 @@
 import { expect } from "@playwright/test";
 import { Given, When, Then } from "./fixtures.js";
 import { teclado } from "../support/entorno.js";
+import { hidratada, RESERVA_GENERAL, WHATSAPP } from "../support/sitio.js";
 
 /** El formulario abre WhatsApp en otra pestaña: se registra la URL en lugar de abrirla. */
 async function capturarWhatsApp(page, bloqueado = false) {
@@ -31,16 +32,19 @@ async function pegar(page, campo, texto) {
 Given("que abro la portada en un móvil", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  await hidratada(page);
 });
 
 Given("que abro el formulario de contacto", async ({ page }) => {
   await capturarWhatsApp(page);
   await page.goto("/#contacto");
+  await hidratada(page);
 });
 
 Given("que abro el formulario con las ventanas emergentes bloqueadas", async ({ page }) => {
   await capturarWhatsApp(page, true);
   await page.goto("/#contacto");
+  await hidratada(page);
 });
 
 Given("que el navegador falla al intentar abrir WhatsApp", async ({ page }) => {
@@ -49,12 +53,14 @@ Given("que el navegador falla al intentar abrir WhatsApp", async ({ page }) => {
 
 // ── Menú ─────────────────────────────────────────────────────────
 
+const menuMovil = (page) => page.getByRole("dialog", { name: "Menú" });
+
 When("abro el menú", async ({ page }) => {
-  await page.getByRole("button", { name: "Abrir menú" }).click();
+  await page.getByRole("button", { name: "Abrir menú", exact: true }).click();
 });
 
 When("elijo {string} en el menú", async ({ page }, opcion) => {
-  await page.locator("#menu-movil").getByRole("link", { name: opcion }).click();
+  await menuMovil(page).getByRole("navigation", { name: "Principal (móvil)" }).getByRole("link", { name: opcion, exact: true }).click();
 });
 
 When("pulso Escape", async ({ page }) => {
@@ -62,13 +68,25 @@ When("pulso Escape", async ({ page }) => {
 });
 
 Then("veo el enlace {string} en el menú", async ({ page }, opcion) => {
-  await expect(page.locator("#menu-movil").getByRole("link", { name: opcion })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Cerrar menú" })).toHaveAttribute("aria-expanded", "true");
+  // Con el panel modal abierto, el resto de la página (y su botón) queda fuera del árbol accesible.
+  await expect(menuMovil(page)).toBeVisible();
+  await expect(menuMovil(page).getByRole("link", { name: opcion, exact: true })).toBeVisible();
 });
 
 Then("el menú se cierra", async ({ page }) => {
-  await expect(page.locator("#menu-movil")).toBeHidden();
-  await expect(page.getByRole("button", { name: "Abrir menú" })).toHaveAttribute("aria-expanded", "false");
+  await expect(menuMovil(page)).toBeHidden();
+  await expect(page.getByRole("button", { name: "Abrir menú", exact: true })).toHaveAttribute("aria-expanded", "false");
+});
+
+Then("el foco vuelve al botón del menú", async ({ page }) => {
+  await expect(page.getByRole("button", { name: "Abrir menú", exact: true })).toBeFocused();
+});
+
+Then("el menú ofrece agendar una valoración por WhatsApp", async ({ page }) => {
+  const href = await menuMovil(page).getByRole("link", { name: /Agenda tu valoración/ }).getAttribute("href");
+  const url = new URL(href);
+  expect(url.origin + url.pathname).toBe(WHATSAPP);
+  expect(url.searchParams.get("text")).toBe(RESERVA_GENERAL);
 });
 
 Then("la sección {string} queda a la vista", async ({ page }, titulo) => {

@@ -1,42 +1,44 @@
 # language: es
 @arquitectura @solo-web
-Característica: Compartir el tema y conservar el catálogo al separar los módulos
+Característica: Conservar el tema elegido y consultar el catálogo por páginas
 
+  # Antes se probaban dos controles en una página de prueba que solo existía con el servidor de
+  # desarrollo de Vite. La página publicada tiene un control: se comparte la elección entre pestañas.
   @tema @smoke
-  Escenario: Dos controles comparten la elección y la conservan al volver
-    Dado que abro una página con dos controles de tema
-    Cuando elijo el modo oscuro desde el primer control
-    Entonces ambos controles ofrecen cambiar a modo claro
+  Escenario: La elección del tema se conserva al recargar
+    Dado que abro la página "/"
+    Cuando elijo el modo oscuro
+    Entonces la página está en modo oscuro
     Y la elección se conserva al recargar
-    Cuando elijo el modo claro desde el segundo control
-    Entonces ambos controles ofrecen cambiar a modo oscuro
+    Cuando elijo el modo claro
+    Entonces la página está en modo claro
 
   @tema
   Escenario: La preferencia del sistema se sigue hasta que la persona elige
-    Dado que abro una página con dos controles de tema
+    Dado que abro la página "/"
     Cuando el sistema cambia a modo oscuro
-    Entonces ambos controles ofrecen cambiar a modo claro
-    Cuando elijo el modo claro desde el segundo control
+    Entonces la página está en modo oscuro
+    Cuando elijo el modo claro
     Y el sistema vuelve a cambiar de claro a oscuro
-    Entonces ambos controles ofrecen cambiar a modo oscuro
+    Entonces la página está en modo claro
 
   @tema @limites
-  Escenario: La elección sigue compartida cuando el almacenamiento está bloqueado
+  Escenario: La elección dura la visita aunque el almacenamiento esté bloqueado
     Dado que el navegador bloquea el almacenamiento
-    Y que abro una página con dos controles de tema
-    Cuando elijo el modo oscuro desde el primer control
-    Entonces ambos controles ofrecen cambiar a modo claro
+    Y que abro la página "/"
+    Cuando elijo el modo oscuro
+    Entonces la página está en modo oscuro
     Cuando el sistema cambia a modo oscuro
     Y el sistema cambia a modo claro
-    Entonces ambos controles ofrecen cambiar a modo claro
+    Entonces la página está en modo oscuro
 
   @tema
   Escenario: Otra pestaña comunica su elección y la retirada de la preferencia
-    Dado que abro una página con dos controles de tema
+    Dado que abro la página "/"
     Cuando elijo el modo oscuro en otra pestaña
-    Entonces ambos controles ofrecen cambiar a modo claro
+    Entonces la página está en modo oscuro
     Cuando retiro la preferencia desde la otra pestaña
-    Entonces ambos controles ofrecen cambiar a modo oscuro
+    Entonces la página está en modo claro
 
   @tratamientos @smoke
   Escenario: El catálogo abre una página y permite consultar sus tratamientos

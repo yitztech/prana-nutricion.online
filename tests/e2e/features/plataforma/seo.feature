@@ -6,7 +6,7 @@ Característica: Buscadores y redes sociales
   Escenario: La portada tiene título, descripción y canonical
     Dado que abro la página "/"
     Entonces la página está en "es"
-    Y el título de la pestaña empieza por "Prana & Nutrición"
+    Y el título de la pestaña empieza por "Praná: Nutrición y Bienestar"
     Y la página tiene descripción
     Y el enlace canonical apunta a "https://prana-nutricion.online/"
 

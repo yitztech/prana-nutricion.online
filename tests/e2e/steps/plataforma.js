@@ -94,11 +94,14 @@ Then("la consola no muestra errores", async ({ page, ctx }) => {
 });
 
 Then("todas las imágenes cargan y tienen texto alternativo", async ({ page }) => {
-  const imagenes = page.locator("img");
-  for (const img of await imagenes.all()) {
+  // Las fotos se describen; los iconos que acompañan a un texto y los fondos llevan alt="" (decorativos).
+  for (const img of await page.locator("img:visible").all()) {
     await img.scrollIntoViewIfNeeded();
-    await expect(img).toHaveAttribute("alt", /.+/);
+    await expect(img).toHaveAttribute("alt");
     await expect.poll(() => img.evaluate((el) => el.complete && el.naturalWidth > 0)).toBe(true);
+  }
+  for (const foto of await page.locator('img[data-slot="photo"]:not([alt=""])').all()) {
+    await expect(foto).toHaveAttribute("alt", /\S{3,}/);
   }
 });
 

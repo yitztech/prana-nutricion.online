@@ -1,8 +1,8 @@
 import { expect } from "@playwright/test";
 import { createBdd } from "playwright-bdd";
+import { hidratada, MARCA } from "../support/sitio.js";
 
 const { Given, When, Then } = createBdd();
-const fixturePath = "/__theme-test";
 
 Then("veo las promociones pasadas con sus condiciones", async ({ page }) => {
   const archive = page.getByRole("region", { name: "Promociones pasadas", exact: true });
@@ -86,16 +86,16 @@ When("consulto Ver paquetes desde las promociones", async ({ page }) => {
   await packagesLink.click();
 });
 
-Given("que abro una página con dos controles de tema", async ({ page, context }) => {
-  await context.route(`**${fixturePath}`, async (route) => {
-    // Conserva la transformación HTML de Vite (incluido el preámbulo de React Refresh).
-    const response = await route.fetch({ url: new URL("/", route.request().url()).href });
-    const html = (await response.text()).replace('/src/main.tsx', '/tests/e2e/support/theme-fixture.tsx');
-    await route.fulfill({ response, body: html });
-  });
-  await page.goto(fixturePath);
-  await expect(page.getByRole("button", { name: "Cambiar a modo oscuro" })).toHaveCount(2);
-});
+// ── Tema: el control de la cabecera, la preferencia del sistema y otras pestañas ──
+const controlTema = (page, destino) =>
+  page.getByRole("banner").getByRole("button", { name: `Cambiar a modo ${destino}`, exact: true });
+
+async function enModo(page, modo) {
+  // Un solo control, que ofrece el modo contrario, y la clase del documento.
+  await expect(controlTema(page, modo === "oscuro" ? "claro" : "oscuro")).toBeVisible();
+  if (modo === "oscuro") await expect(page.locator("html")).toHaveClass(/(^|\s)dark(\s|$)/);
+  else await expect(page.locator("html")).not.toHaveClass(/(^|\s)dark(\s|$)/);
+}
 
 Given("que el navegador bloquea el almacenamiento", async ({ context }) => {
   await context.addInitScript(() => {
@@ -103,25 +103,20 @@ Given("que el navegador bloquea el almacenamiento", async ({ context }) => {
   });
 });
 
-When("elijo el modo oscuro desde el primer control", async ({ page }) => {
-  await page.getByRole("region", { name: "Primer control" }).getByRole("button", { name: "Cambiar a modo oscuro" }).click();
+When("elijo el modo {word}", async ({ page }, modo) => {
+  await hidratada(page);
+  await controlTema(page, modo).click();
 });
-When("elijo el modo claro desde el segundo control", async ({ page }) => {
-  await page.getByRole("region", { name: "Segundo control" }).getByRole("button", { name: "Cambiar a modo claro" }).click();
-});
-Then("ambos controles ofrecen cambiar a modo claro", async ({ page }) => {
-  await expect(page.getByRole("button", { name: "Cambiar a modo claro" })).toHaveCount(2);
-  await expect(page.locator("html")).toHaveClass(/dark/);
-});
-Then("ambos controles ofrecen cambiar a modo oscuro", async ({ page }) => {
-  await expect(page.getByRole("button", { name: "Cambiar a modo oscuro" })).toHaveCount(2);
-  await expect(page.locator("html")).not.toHaveClass(/dark/);
+Then("la página está en modo {word}", async ({ page }, modo) => {
+  await enModo(page, modo);
 });
 Then("la elección se conserva al recargar", async ({ page }) => {
   await page.reload();
-  await expect(page.getByRole("button", { name: "Cambiar a modo claro" })).toHaveCount(2);
+  await hidratada(page);
+  await enModo(page, "oscuro");
 });
 When("el sistema cambia a modo oscuro", async ({ page }) => {
+  await hidratada(page);
   await page.emulateMedia({ colorScheme: "dark" });
 });
 When("el sistema cambia a modo claro", async ({ page }) => {
@@ -132,9 +127,11 @@ When("el sistema vuelve a cambiar de claro a oscuro", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
 });
 When("elijo el modo oscuro en otra pestaña", async ({ page, context }) => {
+  await hidratada(page);
   const other = await context.newPage();
-  await other.goto(new URL(fixturePath, page.url()).href);
-  await other.getByRole("region", { name: "Primer control" }).getByRole("button", { name: "Cambiar a modo oscuro" }).click();
+  await other.goto(page.url());
+  await hidratada(other);
+  await controlTema(other, "oscuro").click();
 });
 When("retiro la preferencia desde la otra pestaña", async ({ page, context }) => {
   const other = context.pages().find((item) => item !== page);
@@ -188,7 +185,7 @@ When("consulto la categoría {string}", async ({ page }, title) => {
 Then("veo la página de {string} en {string}", async ({ page }, title, path) => {
   await expect(page).toHaveURL(new RegExp(`${path}$`));
   await expect(page.getByRole("heading", { level: 1, name: title, exact: true })).toBeVisible();
-  await expect(page).toHaveTitle(`${title} · Praná en Cuautla`);
+  await expect(page).toHaveTitle(`${title} · ${MARCA}`);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "Tratamientos de esta categoría" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -261,7 +258,7 @@ When("consulto el objetivo {string}", async ({ page }, title) => {
 Then("veo el objetivo {string} en {string} con {int} tratamientos", async ({ page }, title, path, count) => {
   await expect(page).toHaveURL(new RegExp(`${path}$`));
   await expect(page.getByRole("heading", { level: 1, name: title, exact: true })).toBeVisible();
-  await expect(page).toHaveTitle(`${title} · Praná en Cuautla`);
+  await expect(page).toHaveTitle(`${title} · ${MARCA}`);
   await expect(page.getByRole("region", { name: "Tratamientos relacionados" }).getByRole("article")).toHaveCount(count);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

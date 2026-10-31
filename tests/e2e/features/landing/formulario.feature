@@ -8,19 +8,19 @@ Característica: Formulario de contacto por WhatsApp
     Dado que abro el formulario de contacto
     Cuando escribo "Ana María López" en el campo "Nombre completo"
     Y escribo "+52 777 123 4567" en el campo "Teléfono"
-    Y elijo el servicio "Cuidado de la Piel"
+    Y elijo el servicio "Cavitación"
     Y escribo "¿Tienen citas el sábado? Precio & horario" en el campo "Mensaje"
     Y pulso "Preparar mensaje en WhatsApp"
     Entonces se intenta abrir WhatsApp al "527772095094" con un mensaje que incluye:
       | *Nombre:* Ana María López                              |
       | *Teléfono:* +52 777 123 4567                           |
-      | *Servicio de Interés:* Cuidado de la Piel              |
+      | *Servicio de Interés:* Cavitación                      |
       | *Mensaje:* ¿Tienen citas el sábado? Precio & horario   |
     Y veo el aviso "Tu mensaje está listo. Si WhatsApp no se abrió, usa «Continuar en WhatsApp». Envíalo desde allí."
     Y puedo continuar con el mismo mensaje en WhatsApp
     Y el campo "Nombre completo" contiene "Ana María López"
     Y el campo "Teléfono" contiene "+52 777 123 4567"
-    Y el servicio elegido es "Cuidado de la Piel"
+    Y el servicio elegido es "Cavitación"
     Y el campo "Mensaje" contiene "¿Tienen citas el sábado? Precio & horario"
     Cuando escribo " por favor" en el campo "Mensaje"
     Entonces no aparece el enlace para continuar en WhatsApp
@@ -135,8 +135,3 @@ Característica: Formulario de contacto por WhatsApp
       | campo           | texto          | queda      | aviso                           |
       | Nombre completo | Ana123 Ma_ría  | Ana María  | El nombre solo admite letras    |
       | Teléfono        | 777abc209#5094 | 7772095094 | El teléfono solo admite números |
-
-  Escenario: La reserva de un tratamiento también lo deja elegido en el formulario opcional
-    Dado que abro la página "/"
-    Cuando agendo una valoración de "Recuperación Postoperatoria"
-    Entonces el servicio elegido es "Recuperación Postoperatoria"
