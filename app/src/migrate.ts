@@ -3,11 +3,13 @@
  * 1. Como superusuario: crea (o actualiza la contraseña de) el rol de la app, sin privilegios
  *    especiales, y le da sus esquemas.
  * 2. Como rol de la app: aplica las migraciones pendientes, con bloqueo (no corren dos a la vez).
- * 3. Si el catálogo está vacío, carga el contenido inicial (shared/seed).
+ * 3. Como rol de la app: instala o actualiza la cola (pg-boss), con un CREATE temporal en la base.
+ * 4. Si el catálogo está vacío, carga el contenido inicial (shared/seed).
  */
 import { join } from "node:path";
 import { runner } from "node-pg-migrate";
 import pg from "pg";
+import { PgBoss } from "pg-boss";
 import { loadMigrateConfig, type MigrateConfig } from "./config.ts";
 import { SCHEMA } from "./db.ts";
 import { seedIfEmpty } from "./content/seed.ts";
@@ -48,6 +50,44 @@ export async function prepareRole(config: MigrateConfig) {
   }
 }
 
+/**
+ * pg-boss ejecuta `CREATE SCHEMA IF NOT EXISTS`, y PostgreSQL exige CREATE en la base aunque el
+ * esquema ya exista. El rol de la app no lo tiene: se le da solo mientras se instala la cola, aquí,
+ * y la app arranca con `migrate: false` (no hace DDL).
+ */
+async function installQueue(config: MigrateConfig) {
+  const admin = new pg.Client({
+    host: config.POSTGRES_HOST,
+    port: config.POSTGRES_PORT,
+    database: config.POSTGRES_DB,
+    user: config.POSTGRES_USER,
+    password: config.POSTGRES_PASSWORD,
+  });
+  await admin.connect();
+  const role = pg.escapeIdentifier(config.APP_DB_USER);
+  const database = pg.escapeIdentifier(config.POSTGRES_DB);
+  try {
+    await admin.query(`GRANT CREATE ON DATABASE ${database} TO ${role}`);
+    const boss = new PgBoss({
+      host: config.POSTGRES_HOST,
+      port: config.POSTGRES_PORT,
+      database: config.POSTGRES_DB,
+      user: config.APP_DB_USER,
+      password: config.APP_DB_PASSWORD,
+      schema: QUEUE_SCHEMA,
+      max: 1,
+      supervise: false,
+      schedule: false,
+      application_name: "prana-migrate",
+    });
+    await boss.start();
+    await boss.stop({ graceful: false });
+  } finally {
+    await admin.query(`REVOKE CREATE ON DATABASE ${database} FROM ${role}`);
+    await admin.end();
+  }
+}
+
 export async function migrate(config: MigrateConfig, log: (message: string) => void = console.log) {
   await prepareRole(config);
   const client = new pg.Client({
@@ -74,6 +114,7 @@ export async function migrate(config: MigrateConfig, log: (message: string) => v
   } finally {
     await client.end();
   }
+  await installQueue(config);
   const pool = createPool(config, { max: 1 });
   try {
     if (await seedIfEmpty(pool)) log("Contenido inicial cargado.");

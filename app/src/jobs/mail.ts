@@ -21,6 +21,8 @@ export function createBoss(config: ServiceConfig) {
     user: config.APP_DB_USER,
     password: config.APP_DB_PASSWORD,
     schema: QUEUE_SCHEMA,
+    // La instala el servicio migrate: el rol de la app no puede crear esquemas
+    migrate: false,
     max: 2,
     application_name: "prana-cola",
   });

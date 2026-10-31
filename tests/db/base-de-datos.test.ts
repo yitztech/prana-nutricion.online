@@ -67,6 +67,15 @@ describe("rol de la app", () => {
     await rejects(db.app.query("COPY (SELECT 1) TO PROGRAM 'id'"), "42501");
     await rejects(db.app.query("CREATE TABLE public.intrusa (id int)"), "42501");
   });
+
+  test("la cola queda instalada a su nombre y sin CREATE en la base, que solo tuvo al instalarla", async () => {
+    const { rows: [queue] } = await db.admin.query(
+      `SELECT pg_get_userbyid(nspowner) AS owner, has_database_privilege($1, current_database(), 'CREATE') AS can_create
+         FROM pg_namespace WHERE nspname = 'pgboss'`, [db.config.APP_DB_USER]);
+    assert.deepEqual(queue, { owner: db.config.APP_DB_USER, can_create: false });
+    await db.app.query("SELECT 1 FROM pgboss.version");
+    await rejects(db.app.query("CREATE SCHEMA intruso"), "42501");
+  });
 });
 
 describe("longitudes (§6.3, las mismas que shared/limits.ts)", () => {
