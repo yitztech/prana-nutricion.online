@@ -6,6 +6,21 @@ const ejecutarComando = (cmd, env) => {
   return resultado.status;
 };
 
+/** Variables obligatorias del compose con valores de prueba (los mismos que el CI); no salen del equipo. */
+export const entornoLocal = {
+  IMAGE_PREFIX: "local/ci",
+  IMAGE_TAG: "ci",
+  TRUSTED_PROXY_CIDR: "127.0.0.1/32",
+  POSTGRES_PASSWORD: "ci-postgres-solo-pruebas",
+  APP_DB_PASSWORD: "ci-app-solo-pruebas-0001",
+  SITE_URL: "https://prana-nutricion.online",
+  SMTP_HOST: "smtp.ci.invalid",
+  SMTP_PORT: "1025",
+  MAIL_FROM: "Praná <contacto@prana-nutricion.online>",
+};
+
+export const compose = ["docker", "compose", "-f", "compose.prod.yml", "-f", "compose.ci.yml", "--profile", "pruebas"];
+
 export async function prepararWeb({ env, reutilizar = false, ejecutar = ejecutarComando, salud }) {
   if (env.E2E_BASE_URL) return;
   if (reutilizar) {
@@ -27,7 +42,8 @@ export async function prepararWeb({ env, reutilizar = false, ejecutar = ejecutar
   const pasos = [
     ["docker", "build", "-q", "-f", "gateway/Dockerfile", "--build-arg", "RELEASE_SHA=local", "-t", `${env.IMAGE_PREFIX}-gateway:${env.IMAGE_TAG}`, "."],
     ["docker", "build", "-q", "-f", "web/Dockerfile", "-t", `${env.IMAGE_PREFIX}-web:${env.IMAGE_TAG}`, "."],
-    ["docker", "compose", "-f", "compose.prod.yml", "-f", "compose.ci.yml", "up", "-d", "--no-build", "--force-recreate", "--wait", "--wait-timeout", "120"],
+    ["docker", "build", "-q", "-f", "app/Dockerfile", "-t", `${env.IMAGE_PREFIX}-app:${env.IMAGE_TAG}`, "."],
+    [...compose, "up", "-d", "--no-build", "--force-recreate", "--wait", "--wait-timeout", "180"],
   ];
   for (const paso of pasos) if (ejecutar(paso, env) !== 0) throw new Error(`Falló: ${paso.join(" ")}`);
 }

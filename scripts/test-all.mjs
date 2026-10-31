@@ -5,17 +5,16 @@
 //   npm test -- e2e          solo esas
 //   npm test -- --reuse      reutiliza explícitamente la web local que ya está arriba
 import { spawnSync } from "node:child_process";
-import { prepararWeb } from "./local-web.mjs";
+import { entornoLocal, prepararWeb } from "./local-web.mjs";
 
-const env = {
-  IMAGE_PREFIX: "local/ci",
-  IMAGE_TAG: "ci",
-  TRUSTED_PROXY_CIDR: "127.0.0.1/32",
-  ...process.env,
-};
+const env = { ...entornoLocal, ...process.env };
 const suites = {
-  unit: { descripcion: "Auditoría, scripts locales y configuración de analítica", comando: ["npm", "run", "test:unit"] },
-  e2e: { descripcion: "Escenarios web (Playwright + Gherkin)", comando: ["npm", "run", "e2e"], necesitaWeb: true },
+  unit: { descripcion: "Esquemas, límites, sitio generado, capas y scripts (sin Docker)", comando: ["npm", "run", "test:unit"] },
+  db: { descripcion: "Base de datos: migraciones, restricciones y rol de la app", comando: ["npm", "run", "test:db"], necesitaWeb: true },
+  api: { descripcion: "API: flujos completos del editor", comando: ["npm", "run", "test:api"], necesitaWeb: true },
+  endpoints: { descripcion: "API: cada endpoint, validación y errores", comando: ["npm", "run", "test:endpoints"], necesitaWeb: true },
+  security: { descripcion: "API: sesión, CSRF, IDOR, límites y cabeceras", comando: ["npm", "run", "test:security"], necesitaWeb: true },
+  e2e: { descripcion: "Escenarios web (Playwright + Gherkin)", comando: ["npm", "run", "e2e"], necesitaWeb: true, resumen: true },
 };
 
 const args = process.argv.slice(2);
@@ -51,7 +50,7 @@ for (const nombre of elegidas) {
       webPreparada = true;
     }
     estado = corre(suite.comando);
-    if (suite.necesitaWeb) {
+    if (suite.resumen) {
       const resumen = corre(["npm", "run", "e2e:summary"]);
       if (resumen !== 0) estado = 1;
     }

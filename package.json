@@ -17,7 +17,7 @@
     "admin:crear": "node app/src/cli.ts admin:crear",
     "images": "sh web/scripts/optimize-images.sh",
     "test": "node scripts/test-all.mjs",
-    "test:unit": "node --test 'tests/unit/*.test.mjs' 'web/src/**/*.test.ts' 'shared/**/*.test.ts' 'app/src/**/*.test.ts'",
+    "test:unit": "node scripts/check-test-only.mjs && node --test 'tests/unit/*.test.mjs' 'web/src/**/*.test.ts' 'shared/**/*.test.ts' 'app/src/**/*.test.ts'",
     "test:db": "node --test --test-concurrency=1 'tests/db/*.test.ts'",
     "test:api": "node --test 'tests/api/flujos/*.test.ts'",
     "test:endpoints": "node --test 'tests/api/endpoints/*.test.ts'",

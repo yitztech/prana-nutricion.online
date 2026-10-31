@@ -6,12 +6,13 @@
 **/node_modules
 **/.DS_Store
 *.md
-# Pruebas y scripts: no entran en ninguna imagen
+# Pruebas, scripts, documentación y builds locales: no entran en ninguna imagen
 tests/
 scripts/
+docs/
 compose*.yml
-
-# El build prerenderiza las páginas con este script
-!scripts/build.mjs
+web/dist/
+**/*.test.ts
 .agents/
 .build/
+*.tmp.mjs

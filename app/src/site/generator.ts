@@ -51,15 +51,37 @@ export async function generateSite({ content, webDist, siteDir, siteUrl, rendere
   const temporary = join(siteDir, `.current-${id}`);
   await symlink(join("releases", id), temporary);
   await rename(temporary, join(siteDir, "current"));
-  await prune(releases, id);
+  const kept = await prune(releases, id);
+  await shareAssets(siteDir, releases, kept);
   return { id, pages: pages.length };
 }
 
-/** Se conservan las últimas versiones: una página abierta sigue encontrando su CSS y su JS. */
+/** Se conservan las últimas versiones; devuelve las que quedan. */
 async function prune(releases: string, current: string) {
   const all = (await readdir(releases)).filter((name) => /^\d+-[0-9a-f]{6}$/.test(name)).sort();
   const old = all.filter((name) => name !== current).slice(0, Math.max(0, all.length - KEEP_RELEASES));
   await Promise.all(old.map((name) => rm(join(releases, name), { recursive: true, force: true })));
+  return all.filter((name) => !old.includes(name));
+}
+
+/**
+ * `assets/` común (nginx sirve /assets/ desde aquí): los archivos con huella de las versiones que se
+ * conservan. Una página abierta antes de un despliegue sigue encontrando su CSS y sus módulos.
+ */
+async function shareAssets(siteDir: string, releases: string, kept: string[]) {
+  const shared = join(siteDir, "assets");
+  await mkdir(shared, { recursive: true });
+  const wanted = new Set<string>();
+  for (const name of kept) {
+    const dir = join(releases, name, "assets");
+    const files = await readdir(dir).catch(() => [] as string[]);
+    for (const file of files) {
+      if (!wanted.has(file)) await cp(join(dir, file), join(shared, file), { force: false, errorOnExist: false });
+      wanted.add(file);
+    }
+  }
+  const stale = (await readdir(shared)).filter((file) => !wanted.has(file));
+  await Promise.all(stale.map((file) => rm(join(shared, file), { force: true })));
 }
 
 const escapeXml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;");

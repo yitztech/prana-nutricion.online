@@ -13,11 +13,13 @@ test("cada ejecución reconstruye y recrea aunque ya exista una web saludable", 
   } };
   await prepararWeb(opciones);
   await prepararWeb(opciones);
-  assert.equal(comandos.length, 6);
+  assert.equal(comandos.length, 8);
   assert.equal(comandos[0].at(-2), "local/prana-prueba-gateway:actual");
   assert.equal(comandos[1].at(-2), "local/prana-prueba-web:actual");
-  assert.ok(comandos[2].includes("--force-recreate"));
-  assert.deepEqual(comandos.slice(0, 3), comandos.slice(3));
+  assert.equal(comandos[2].at(-2), "local/prana-prueba-app:actual");
+  assert.ok(comandos[3].includes("--force-recreate"));
+  assert.ok(comandos[3].includes("pruebas"), "con Mailpit (perfil pruebas)");
+  assert.deepEqual(comandos.slice(0, 4), comandos.slice(4));
 });
 
 test("--reuse evita Docker solo cuando la web está saludable", async () => {
@@ -31,7 +33,7 @@ test("un destino externo explícito no construye ni modifica servicios locales",
 });
 
 test("un fallo de build o compose detiene la preparación y se propaga", async () => {
-  for (const fallarEn of [1, 2, 3]) {
+  for (const fallarEn of [1, 2, 3, 4]) {
     let ejecuciones = 0;
     await assert.rejects(prepararWeb({ env, ejecutar: () => ++ejecuciones === fallarEn ? 1 : 0 }), /Falló:/);
     assert.equal(ejecuciones, fallarEn);

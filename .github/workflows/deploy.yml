@@ -1,13 +1,15 @@
 # Verifica cada cambio y, en main, publica las imágenes en GHCR y despliega en Coolify.
 #
-#   verificar, escenarios y seguridad (PR y main) → publicar (gateway y web)
+#   verificar, escenarios, base de datos y seguridad (PR y main) → publicar (gateway, web y app)
 #     → desplegar (webhook de Coolify) → comprobar
 #
-# `Verificar`, `Escenarios` y `Seguridad` son los checks que exige la regla de main (AGENTS.md §40):
-# - Verificar: build del CSS, auditoría de npm, Dockerfiles, reglas del compose, prueba de humo con
-#   las imágenes que se van a publicar y análisis de vulnerabilidades.
-# - Escenarios: los escenarios web (tests/e2e) contra esas mismas imágenes.
-# - Seguridad: CodeQL y ZAP pasivo. La web no tiene API ni base de datos: no hay `Base de datos`.
+# `Verificar`, `Escenarios`, `Base de datos` y `Seguridad` son los checks que exige la regla de main
+# (AGENTS.md §40):
+# - Verificar: tipos, pruebas unitarias, build de la web, auditoría de npm, Dockerfiles, reglas del
+#   compose, prueba de humo con las imágenes que se van a publicar y análisis de vulnerabilidades.
+# - Escenarios: la API (test:api y test:endpoints) y los escenarios web (tests/e2e) contra esas imágenes.
+# - Base de datos: test:db contra PostgreSQL de la misma versión mayor y Squawk sobre las migraciones.
+# - Seguridad: test:security, CodeQL y ZAP pasivo.
 # El entorno `production` (secretos COOLIFY_WEBHOOK y COOLIFY_TOKEN, variable SITE_URL)
 # lo rellena el alta del cliente (infra-ionos-vps, playbook cliente-alta). Mientras no
 # exista, se publican las imágenes pero no se despliega.
@@ -36,9 +38,14 @@ env:
   # Imágenes locales de la verificación (no salen del runner)
   IMAGE_PREFIX: local/ci
   IMAGE_TAG: ci
-  # Variables obligatorias del compose (`:?`), con valores de prueba. Añadir aquí las que
-  # añada la app (p. ej. POSTGRES_PASSWORD: ci).
+  # Variables obligatorias del compose (`:?`), con valores de prueba que no salen del runner.
   TRUSTED_PROXY_CIDR: 127.0.0.1/32
+  POSTGRES_PASSWORD: ci-postgres-solo-pruebas
+  APP_DB_PASSWORD: ci-app-solo-pruebas-0001
+  SITE_URL: https://prana-nutricion.online
+  SMTP_HOST: smtp.ci.invalid
+  SMTP_PORT: "1025"
+  MAIL_FROM: Praná <contacto@prana-nutricion.online>
 
 jobs:
   verificar:
@@ -51,10 +58,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Tipos
+        run: npm run typecheck
+      - name: Web (cliente y SSR)
+        run: npm run build
       - name: Pruebas unitarias
         run: npm run test:unit
-      - name: CSS
-        run: npm run build
       # Falla con vulnerabilidades altas o críticas en las dependencias, salvo las excepciones
       # documentadas y con fecha de revisión de scripts/check-audit.mjs (SEG-06)
       - name: Auditoría de dependencias
@@ -69,6 +78,10 @@ jobs:
         uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
         with:
           dockerfile: web/Dockerfile
+      - name: Dockerfile de app
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          dockerfile: app/Dockerfile
 
       - name: Reglas del compose
         run: .github/scripts/reglas-compose.sh compose.prod.yml
@@ -95,16 +108,27 @@ jobs:
           tags: ${{ env.IMAGE_PREFIX }}-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
+      - name: Construir app
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: app/Dockerfile
+          load: true
+          tags: ${{ env.IMAGE_PREFIX }}-app:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,mode=max,scope=app
 
       # El compose de producción, tal cual (solo lectura, sin root), con las imágenes recién construidas
       - name: Prueba de humo
         env:
           EXPECTED_SHA: ${{ github.sha }}
         run: |
-          docker compose -f compose.prod.yml up -d --wait --wait-timeout 120
+          docker compose -f compose.prod.yml up -d --wait --wait-timeout 180
           gw() { docker compose -f compose.prod.yml exec -T gateway "$@"; }
 
           [ "$(gw wget -qO- http://127.0.0.1/healthz)" = "ok" ]
+          [ "$(gw wget -qO- http://127.0.0.1/api/health | jq -r .status)" = "ok" ] || { echo "::error::/api/health no responde ok"; exit 1; }
+          gw wget -qO- http://127.0.0.1/ | grep -q 'id="prana-datos"' || { echo "::error::La portada no está generada"; exit 1; }
           revision=$(gw wget -qO- http://127.0.0.1/version.json | jq -r .revision)
           [ "$revision" = "$EXPECTED_SHA" ] || { echo "::error::/version.json sirve $revision"; exit 1; }
 
@@ -113,8 +137,11 @@ jobs:
             printf '%s\n' "$cabeceras" | grep -qi "^ *$c:" || { echo "::error::Falta la cabecera $c"; exit 1; }
           done
 
-          for s in $(docker compose -f compose.prod.yml ps --services); do
-            [ "$(docker compose -f compose.prod.yml exec -T "$s" id -u)" != "0" ] || { echo "::error::$s corre como root"; exit 1; }
+          # El proceso principal de cada contenedor (PostgreSQL arranca como root y baja a postgres)
+          for s in $(docker compose -f compose.prod.yml ps --services --status running); do
+            pid=$(docker inspect --format '{{.State.Pid}}' "$(docker compose -f compose.prod.yml ps -q "$s")")
+            uid=$(awk '/^Uid:/ {print $2}' "/proc/$pid/status")
+            [ "$uid" != "0" ] || { echo "::error::$s corre como root"; exit 1; }
           done
           echo "Humo correcto: $revision"
 
@@ -149,6 +176,17 @@ jobs:
           format: cyclonedx
           scanners: vuln
           output: ${{ runner.temp }}/imagenes-verificadas/web.cdx.json
+      - name: Vulnerabilidades de app
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.0
+          image-ref: ${{ env.IMAGE_PREFIX }}-app:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          format: cyclonedx
+          scanners: vuln
+          output: ${{ runner.temp }}/imagenes-verificadas/app.cdx.json
 
       - name: Exportar las imágenes verificadas
         env:
@@ -192,7 +230,11 @@ jobs:
         env:
           IMAGENES_DIR: ${{ runner.temp }}/imagenes-verificadas
         run: sh .github/scripts/imagenes-ci.sh cargar "$IMAGENES_DIR"
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml up -d --no-build --wait --wait-timeout 120
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml --profile pruebas up -d --no-build --wait --wait-timeout 180
+      - name: API (flujos)
+        run: npm run test:api
+      - name: API (endpoints)
+        run: npm run test:endpoints
       - run: npm run e2e
         env:
           E2E_REVISION: ${{ github.sha }}
@@ -203,8 +245,38 @@ jobs:
         with:
           name: qa-evidence
           path: tests/e2e/results/
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml down -v
+      - name: Logs del entorno
+        if: failure()
+        run: docker compose -f compose.prod.yml -f compose.ci.yml --profile pruebas logs --no-color
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml --profile pruebas down -v
         if: always()
+
+  base-de-datos:
+    name: Base de datos
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      # La misma imagen que producción (compose.prod.yml)
+      postgres:
+        image: postgres:18.6-alpine3.24
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-postgres-solo-pruebas
+          POSTGRES_DB: postgres
+        ports: ["127.0.0.1:54329:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Migraciones y restricciones (test:db)
+        run: npm run test:db
+      - name: Squawk
+        run: npm run check:migraciones
 
   seguridad:
     name: Seguridad
@@ -230,7 +302,14 @@ jobs:
         env:
           IMAGENES_DIR: ${{ runner.temp }}/imagenes-verificadas
         run: sh .github/scripts/imagenes-ci.sh cargar "$IMAGENES_DIR"
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml up -d --no-build --wait --wait-timeout 120
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml --profile pruebas up -d --no-build --wait --wait-timeout 180
+      - name: API (seguridad)
+        run: npm run test:security
       # Falla con las reglas en FAIL; los avisos quedan en el informe (artefacto zap_scan)
       - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
@@ -238,12 +317,12 @@ jobs:
           cmd_options: -I
           allow_issue_writing: false
           fail_action: true
-      - run: docker compose -f compose.prod.yml -f compose.ci.yml down -v
+      - run: docker compose -f compose.prod.yml -f compose.ci.yml --profile pruebas down -v
         if: always()
 
   publicar:
     name: Publicar ${{ matrix.name }}
-    needs: [verificar, escenarios, seguridad]
+    needs: [verificar, escenarios, base-de-datos, seguridad]
     if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && !github.event.repository.is_template }}
     runs-on: ubuntu-latest
     permissions:
@@ -257,6 +336,7 @@ jobs:
         include:
           - name: gateway
           - name: web
+          - name: app
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
