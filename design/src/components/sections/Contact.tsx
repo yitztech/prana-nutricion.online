@@ -6,7 +6,7 @@ import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Surface } from "@/components/ui/surface";
 import { Eyebrow, Heading, Script, Text } from "@/components/ui/typography";
-import { contact } from "@/data/site";
+import { contact, socialLinks } from "@/data/site";
 
 export function Contact() {
   return (
@@ -26,7 +26,7 @@ export function Contact() {
             <Text variant="label" className="mt-8">
               Síguenos
             </Text>
-            <SocialLinks className="mt-3" />
+            <SocialLinks links={socialLinks} className="mt-3" />
           </div>
 
           <address className="grid gap-3">

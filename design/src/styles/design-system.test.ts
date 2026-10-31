@@ -2,7 +2,7 @@
  * Reglas del sistema de diseño (ver design/README.md, «Sistema de diseño»):
  * - Claro y oscuro definen los mismos roles, y cada rol apunta a un color de la paleta.
  * - Ningún componente escribe colores: ni hex, ni rgb(), ni colores de Tailwind, ni dark:.
- * - Fuera de components/ui/ las clases solo componen: sin valores [arbitrarios], sin color,
+ * - Fuera de components/ui/ y components/brand/ui/ las clases solo componen: sin valores [arbitrarios], sin color,
  *   tipografía ni decoración. Lo visual se pide a una primitiva de ui/ con su variante.
  */
 import assert from "node:assert/strict";
@@ -49,7 +49,9 @@ const files = (dir: string): string[] =>
     entry.isDirectory() ? files(join(dir, entry.name)) : entry.name.endsWith(".tsx") ? [join(dir, entry.name)] : [],
   );
 const components = files(".");
-const isPrimitive = (path: string) => path.startsWith(join("components", "ui"));
+const isPrimitive = (path: string) =>
+  path.startsWith(join("components", "ui") + "/") ||
+  path.startsWith(join("components", "brand", "ui") + "/");
 
 const colorRules: [RegExp, string][] = [
   [/(?<![\w&/])#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\b/i, "color hex"],
@@ -86,7 +88,7 @@ const visual = [
   /^(?:italic|not-italic|uppercase|lowercase|capitalize|underline|line-through)$/,
 ];
 
-test("fuera de ui/ las clases solo componen (sin estilos a mano)", () => {
+test("fuera de las primitivas base y de marca las clases solo componen", () => {
   const found = components
     .filter((path) => !isPrimitive(path))
     .flatMap((path) =>

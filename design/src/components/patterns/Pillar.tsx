@@ -1,4 +1,4 @@
-import { PranaIcon } from "@/components/ui/prana-icon";
+import { PranaIcon } from "@/components/brand/ui/prana-icon";
 import { Surface } from "@/components/ui/surface";
 import { Text } from "@/components/ui/typography";
 import type { Highlight } from "@/types";

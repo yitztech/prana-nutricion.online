@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "node --test 'src/**/*.test.ts'",
+    "e2e": "bddgen -c tests/e2e/playwright.config.js && playwright test -c tests/e2e/playwright.config.js",
     "images": "sh scripts/optimize-images.sh"
   },
   "dependencies": {

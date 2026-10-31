@@ -43,3 +43,23 @@ test("el build genera las cuatro rutas con SEO y controles funcionales sin runti
   );
   assert.match(home, /id="wa-continuar"[^>]*hidden/);
 });
+
+test("el catálogo genera enlaces, páginas individuales y sitemap coherentes", async () => {
+  const { categories, servicePath } = await import("../../web/src/lib/catalog.js");
+  const home = readFileSync("web/public/index.html", "utf8");
+  const sitemap = readFileSync("web/public/sitemap.xml", "utf8");
+  assert.equal(categories.length, 4);
+  for (const category of categories) {
+    assert.ok(home.includes(`id="categoria-${category.id}"`));
+    for (const service of category.services) {
+      const path = servicePath(service);
+      const html = readFileSync(`web/public${path}.html`, "utf8");
+      assert.ok(home.includes(`href="${path}"`));
+      assert.ok(sitemap.includes(`https://prana-nutricion.online${path}</loc>`));
+      assert.ok(html.includes(`<h1>${service.title}</h1>`));
+      assert.ok(html.includes(`href="/#categoria-${category.id}"`));
+      assert.match(html, /https:\/\/wa\.me\/527772095094\?text=/);
+      assert.ok(html.includes(`rel="canonical" href="https://prana-nutricion.online${path}"`));
+    }
+  }
+});

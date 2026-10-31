@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { Pillar } from "@/components/patterns/Pillar";
-import { Button } from "@/components/ui/button";
+import { BrandButton } from "@/components/brand/ui/brand-button";
 import { Container } from "@/components/ui/container";
 import { Photo } from "@/components/ui/photo";
 import { Section } from "@/components/ui/section";
@@ -46,12 +46,12 @@ export function Philosophy() {
             En Praná creemos en una belleza que nace del equilibrio. Por eso, combinamos tecnología,
             experiencia y un trato humano para ayudarte a sentirte bien por dentro y por fuera.
           </Text>
-          <Button asChild variant="cta" size="cta" className="mt-6">
+          <BrandButton asChild variant="cta" size="cta" className="mt-6">
             <a href="#contacto">
               Conoce nuestra filosofía
               <ArrowRight className="size-4" />
             </a>
-          </Button>
+          </BrandButton>
         </div>
 
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">

@@ -3,14 +3,14 @@ import type { Category, TreatmentRef } from "@/types";
 /** Lo que vale para todas las fichas. Precios, sesiones y promociones vigentes los confirma la clínica. */
 export const treatmentNotes = [
   "En tu valoración el equipo confirma si este tratamiento es adecuado para ti.",
-  "Precio, número de sesiones y duración se acuerdan después de la valoración.",
+  "Consulta las condiciones de cada promoción; fuera de ellas, precio, sesiones y duración se acuerdan en la valoración.",
   "Los resultados varían en cada persona; no se garantizan resultados específicos.",
 ];
 
 export const categories: Category[] = [
   {
     id: "reductivos",
-    title: "Tratamientos reductivos",
+    title: "Reductivos",
     description: "Opciones de cuidado corporal para conversar durante tu valoración.",
     photo: "tratamientos-reductivos",
     photoAlt: "Abdomen de una mujer con una cinta métrica rosa",
@@ -53,7 +53,7 @@ export const categories: Category[] = [
   },
   {
     id: "corporales",
-    title: "Tratamientos corporales",
+    title: "Corporales",
     description: "Conoce alternativas de cuidado corporal y recibe orientación personalizada.",
     photo: "tratamientos-corporales",
     photoAlt: "Especialista con guantes rosas aplicando aparatología corporal",
@@ -126,7 +126,7 @@ export const categories: Category[] = [
         slug: "reset-prana",
         name: "Reset Praná",
         icon: "reset-prana",
-        description: "Consulta con el equipo qué incluye Reset Praná y su disponibilidad actual.",
+        description: "Paquete de bienestar con aparatología corporal, carboxiterapia y valoración corporal. Consulta las promociones y su vigencia.",
       },
       {
         slug: "reductivo-intenso",

@@ -28,6 +28,10 @@
   address {
     font-style: normal;
   }
+  /* Destinos de lectura enfocados al navegar a un tratamiento, sin marco alrededor del contenido. */
+  article[tabindex="-1"]:focus {
+    outline: none;
+  }
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;

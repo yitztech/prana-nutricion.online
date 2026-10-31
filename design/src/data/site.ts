@@ -1,12 +1,18 @@
-import type { Benefit, Highlight } from "@/types";
+import type { Highlight } from "@/types";
 
+/** Las anclas (`#…`) llevan a secciones de la portada; las rutas, a páginas propias. */
 export const navItems = [
   { href: "#inicio", label: "Inicio" },
   { href: "#tratamientos", label: "Tratamientos" },
   { href: "#nosotros", label: "Nosotros" },
-  { href: "#promociones", label: "Promociones" },
+  { href: "/tratamientos/promociones/", label: "Promociones" },
   { href: "#contacto", label: "Contacto" },
 ] as const;
+
+/** Fuera de la portada, las anclas apuntan a la sección de la portada. */
+export function navItemHref(href: string, home: boolean) {
+  return href.startsWith("#") && !home ? `/${href}` : href;
+}
 
 export const heroHighlights: Highlight[] = [
   { icon: "tratamientos-no-invasivos", label: "Tratamientos no invasivos" },
@@ -19,57 +25,6 @@ export const pillars: Highlight[] = [
   { icon: "tecnologia-de-vanguardia", label: "Tecnología de vanguardia y protocolos seguros" },
   { icon: "acompanamiento", label: "Acompañamiento durante todo tu tratamiento" },
   { icon: "resultados-visibles", label: "Resultados visibles y bienestar real" },
-];
-
-/**
- * Franja del mockup: sus textos e iconos, y los tratamientos relacionados con cada objetivo.
- * Los resultados dependen de cada persona y se valoran en consulta.
- */
-export const benefits: Benefit[] = [
-  {
-    icon: "reduccion-medidas",
-    title: "Reducción de medidas",
-    treatments: [
-      { categoryId: "reductivos", slug: "mini-lipo" },
-      { categoryId: "reductivos", slug: "lipolaser" },
-      { categoryId: "reductivos", slug: "cavitacion" },
-      { categoryId: "promociones", slug: "reductivo-intenso" },
-    ],
-  },
-  {
-    icon: "mejora-la-circulacion",
-    title: "Mejora la circulación",
-    treatments: [
-      { categoryId: "corporales", slug: "carboxiterapia" },
-      { categoryId: "promociones", slug: "paquete-carboxiterapia" },
-      { categoryId: "reductivos", slug: "aparatologia-corporal" },
-    ],
-  },
-  {
-    icon: "moldea-tu-figura",
-    title: "Moldea tu figura",
-    treatments: [
-      { categoryId: "reductivos", slug: "aparatologia-corporal" },
-      { categoryId: "reductivos", slug: "cavitacion" },
-      { categoryId: "promociones", slug: "tratamientos-combinados" },
-    ],
-  },
-  {
-    icon: "piel-mas-firme",
-    title: "Piel más firme y rejuvenecida",
-    treatments: [
-      { categoryId: "corporales", slug: "mesoterapia" },
-      { categoryId: "corporales", slug: "carboxiterapia" },
-    ],
-  },
-  {
-    icon: "bienestar-integral",
-    title: "Bienestar integral",
-    treatments: [
-      { categoryId: "promociones", slug: "reset-prana" },
-      { categoryId: "promociones", slug: "tratamientos-combinados" },
-    ],
-  },
 ];
 
 /** Datos de contacto confirmados en la web publicada. Los horarios aún no están confirmados. */

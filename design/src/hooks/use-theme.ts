@@ -1,55 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 
 export type Theme = "light" | "dark";
-
-/** Clave en localStorage; public/theme.js la lee antes de pintar para no parpadear. */
+/** public/theme.js utiliza la misma clave antes de pintar. */
 export const THEME_STORAGE_KEY = "prana-tema";
+export const ThemeContext = createContext<{ theme: Theme; toggle: () => void } | null>(null);
 
-const systemDark = () => window.matchMedia("(prefers-color-scheme: dark)");
-
-function storedTheme(): Theme | null {
-  try {
-    const value = localStorage.getItem(THEME_STORAGE_KEY);
-    return value === "light" || value === "dark" ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function applyTheme(theme: Theme) {
-  document.documentElement.classList.toggle("dark", theme === "dark");
-}
-
-/** Tema actual: el elegido por la persona o, si no eligió, el del sistema. */
+/** Todos los controles leen el estado de un único ThemeProvider. */
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() =>
-    document.documentElement.classList.contains("dark") ? "dark" : "light",
-  );
-
-  useEffect(() => {
-    const media = systemDark();
-    const follow = () => {
-      if (storedTheme()) return;
-      const next = media.matches ? "dark" : "light";
-      applyTheme(next);
-      setTheme(next);
-    };
-    media.addEventListener("change", follow);
-    return () => media.removeEventListener("change", follow);
-  }, []);
-
-  const toggle = useCallback(() => {
-    setTheme((current) => {
-      const next = current === "dark" ? "light" : "dark";
-      applyTheme(next);
-      try {
-        localStorage.setItem(THEME_STORAGE_KEY, next);
-      } catch {
-        // Sin almacenamiento (modo privado): el cambio dura lo que la visita.
-      }
-      return next;
-    });
-  }, []);
-
-  return { theme, toggle };
+  const context = useContext(ThemeContext);
+  if (!context) throw new Error("useTheme necesita ThemeProvider");
+  return context;
 }

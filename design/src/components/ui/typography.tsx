@@ -98,6 +98,8 @@ const textVariants = cva("", {
       intro: "text-sm text-foreground/80 sm:text-base",
       /** Texto secundario. */
       muted: "text-muted-foreground",
+      /** Importe principal de una oferta, con cifras alineadas. */
+      price: "font-sans text-4xl font-semibold text-primary tabular-nums sm:text-5xl",
       /** Texto pequeño. */
       small: "text-sm text-foreground/85",
       /** Texto pequeño secundario. */

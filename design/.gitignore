@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+tests/e2e/.features-gen/
+tests/e2e/results/

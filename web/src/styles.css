@@ -486,3 +486,38 @@ h2 {
     padding-block: 5rem;
   }
 }
+
+/* Catálogo: imágenes existentes, rosa y lila como acentos sobre superficies claras. */
+.catalog-section { background: #fff9fc; color: #302b32; padding-block: 5rem; }
+.catalog-nav { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 2rem; }
+.catalog-nav a { border: 1px solid #a76aa7; border-radius: 999px; padding: .6rem 1rem; font-size: .9rem; color: #302b32; }
+.catalog-nav a:hover { background: #f7dce9; }
+.catalog-grid { display: grid; gap: 1.5rem; }
+.catalog-card { background: white; border: 1px solid #efdce7; border-radius: 1rem; overflow: hidden; scroll-margin-top: 6rem; }
+.catalog-image { height: 13rem; overflow: hidden; }
+.catalog-image img, .service-detail-image img { width: 100%; height: 100%; object-fit: cover; }
+.catalog-card-content { padding: 1.5rem; }
+.catalog-card h3, .related-services h2 { font: 600 1.5rem/1.25 var(--font-serif); }
+.catalog-card p { margin-top: .7rem; line-height: 1.6; }
+.catalog-card ul, .related-services ul { margin-top: 1.25rem; display: grid; gap: .6rem; }
+.catalog-card li a, .related-services li a, .back-catalog { color: #8e2456; text-decoration: underline; text-underline-offset: .2em; }
+.catalog-note { margin-top: 2rem; max-width: 70ch; line-height: 1.6; }
+.service-page { min-height: 100vh; background: #fff9fc; color: #302b32; }
+.service-header { background: white; border-bottom: 1px solid #efdce7; }
+.service-header > div { min-height: 5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.service-header > div > a:last-child { color: #8e2456; text-decoration: underline; text-underline-offset: .2em; }
+.service-detail { padding-block: 2rem 5rem; }
+.service-breadcrumb { font-size: .9rem; line-height: 1.8; }
+.service-breadcrumb a { text-decoration: underline; text-underline-offset: .2em; }
+.service-detail-grid { display: grid; gap: 2rem; margin-top: 3rem; align-items: center; }
+.service-category { color: #8e2456; font-weight: 600; }
+.service-detail h1 { font: 600 clamp(2.8rem, 6vw, 4.5rem)/1.1 var(--font-serif); margin-top: .7rem; }
+.service-description { font-size: 1.2rem; line-height: 1.7; margin-top: 1.5rem; max-width: 55ch; }
+.service-disclaimer { line-height: 1.6; margin-block: 1.5rem; max-width: 55ch; }
+.service-detail-image { height: 22rem; border-radius: 1rem; overflow: hidden; background: #f7dce9; }
+.related-services { margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #d93680; }
+.back-catalog { display: inline-block; margin-top: 2rem; }
+.service-footer { background: #f7dce9; padding-block: 2rem; }
+.service-footer > div { display: flex; flex-wrap: wrap; gap: 1rem 2rem; }
+.service-footer a { text-decoration: underline; }
+@media (min-width: 768px) { .catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .service-detail-grid { grid-template-columns: 1fr 1fr; gap: 4rem; } .service-detail-image { height: 30rem; } }

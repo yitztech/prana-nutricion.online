@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { BookingButton } from "@/components/brand/BookingButton";
 import { ThemeToggle } from "@/components/brand/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/ui/logo";
+import { Logo } from "@/components/brand/ui/logo";
 import {
   Sheet,
   SheetContent,
@@ -14,16 +14,20 @@ import {
 } from "@/components/ui/sheet";
 import { Surface } from "@/components/ui/surface";
 import { TextLink } from "@/components/ui/text-link";
-import { navItems } from "@/data/site";
+import { navItemHref, navItems } from "@/data/site";
 import { useActiveSection } from "@/hooks/use-active-section";
 
-const sectionIds = navItems.map((item) => item.href.slice(1));
+const sectionIds = navItems.filter((item) => item.href.startsWith("#")).map((item) => item.href.slice(1));
 
-export function Header() {
+export function Header({ home = true }: { home?: boolean }) {
+  const sectionHref = (href: string) => navItemHref(href, home);
   const [open, setOpen] = useState(false);
   // El Sheet bloquea el scroll mientras está abierto: se navega al cerrarse, no al pulsar.
   const pendingTarget = useRef<string | null>(null);
   const active = useActiveSection(sectionIds);
+  const current = (href: string) =>
+    href.startsWith("#") ? (home && active === href.slice(1) ? "location" : undefined)
+    : window.location.pathname === href ? "page" : undefined;
 
   function goToPendingTarget(event: Event) {
     const id = pendingTarget.current;
@@ -41,7 +45,7 @@ export function Header() {
     <Surface asChild variant="bar">
       <header className="sticky top-0 z-40 border-b">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 md:h-20 lg:px-8">
-          <a href="#inicio" className="inline-flex shrink-0">
+          <a href={sectionHref("#inicio")} className="inline-flex shrink-0">
             <Logo className="h-11 sm:h-12 md:h-14" />
           </a>
 
@@ -51,8 +55,8 @@ export function Header() {
                 <li key={item.href}>
                   <TextLink
                     variant="nav"
-                    href={item.href}
-                    aria-current={active === item.href.slice(1) ? "location" : undefined}
+                    href={sectionHref(item.href)}
+                    aria-current={current(item.href)}
                   >
                     {item.label}
                   </TextLink>
@@ -80,13 +84,14 @@ export function Header() {
                       <li key={item.href}>
                         <TextLink
                           variant="menu"
-                          href={item.href}
+                          href={sectionHref(item.href)}
                           onClick={(event) => {
+                            if (!home || !item.href.startsWith("#")) return;
                             event.preventDefault();
                             pendingTarget.current = item.href.slice(1);
                             setOpen(false);
                           }}
-                          aria-current={active === item.href.slice(1) ? "location" : undefined}
+                          aria-current={current(item.href)}
                         >
                           {item.label}
                         </TextLink>

@@ -1,13 +1,10 @@
 import { CategoryCard, CategoryRow } from "@/components/patterns/CategoryCard";
 import { SectionHeader } from "@/components/patterns/SectionHeader";
-import { useTreatmentDialog } from "@/components/patterns/TreatmentDialog";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
-import { categories } from "@/data/treatments";
+import { categories } from "@/features/treatments";
 
 export function TreatmentCatalog() {
-  const { openTreatment } = useTreatmentDialog();
-
   return (
     <Section id="tratamientos" aria-labelledby="tratamientos-titulo" className="pt-10 pb-12 sm:pt-12 sm:pb-16">
       <Container size="wide">
@@ -22,7 +19,6 @@ export function TreatmentCatalog() {
             <CategoryCard
               key={category.id}
               category={category}
-              onOpen={(slug) => openTreatment({ categoryId: category.id, slug })}
             />
           ))}
         </div>
@@ -32,7 +28,6 @@ export function TreatmentCatalog() {
             <CategoryRow
               key={category.id}
               category={category}
-              onOpen={() => openTreatment({ categoryId: category.id })}
             />
           ))}
         </ul>

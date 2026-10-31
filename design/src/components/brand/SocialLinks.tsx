@@ -1,14 +1,15 @@
-import { SocialIcon } from "@/components/brand/BrandIcons";
-import { Button } from "@/components/ui/button";
-import { socialLinks } from "@/data/site";
+import { SocialIcon, type SocialNetwork } from "@/components/brand/BrandIcons";
+import { BrandButton } from "@/components/brand/ui/brand-button";
 import { cn } from "@/lib/utils";
 
-export function SocialLinks({ className }: { className?: string }) {
+type SocialLink = { network: SocialNetwork; label: string; href: string };
+
+export function SocialLinks({ links, className }: { links: readonly SocialLink[]; className?: string }) {
   return (
     <ul className={cn("flex gap-2", className)}>
-      {socialLinks.map((s) => (
+      {links.map((s) => (
         <li key={s.network}>
-          <Button asChild variant="social" size="icon" className="size-11">
+          <BrandButton asChild variant="social" size="social" className="size-11">
             <a
               href={s.href}
               target="_blank"
@@ -17,7 +18,7 @@ export function SocialLinks({ className }: { className?: string }) {
             >
               <SocialIcon network={s.network} className="size-5" />
             </a>
-          </Button>
+          </BrandButton>
         </li>
       ))}
     </ul>

@@ -1,15 +1,12 @@
 import { SocialLinks } from "@/components/brand/SocialLinks";
-import { useTreatmentDialog } from "@/components/patterns/TreatmentDialog";
-import { Logo } from "@/components/ui/logo";
+import { Logo } from "@/components/brand/ui/logo";
 import { Surface } from "@/components/ui/surface";
 import { TextLink } from "@/components/ui/text-link";
 import { Heading, Text } from "@/components/ui/typography";
-import { contact, navItems } from "@/data/site";
-import { categories } from "@/data/treatments";
+import { contact, navItemHref, navItems, socialLinks } from "@/data/site";
+import { categories, treatmentCategoryHref } from "@/features/treatments";
 
-export function Footer() {
-  const { openTreatment } = useTreatmentDialog();
-
+export function Footer({ home = true }: { home?: boolean }) {
   return (
     <Surface asChild variant="page">
       <footer className="border-t pb-24 md:pb-0">
@@ -19,7 +16,7 @@ export function Footer() {
             <Text variant="small-muted" className="mt-3 max-w-xs">
               Tratamientos personalizados de belleza y bienestar en Cuautla, Morelos.
             </Text>
-            <SocialLinks className="mt-4" />
+            <SocialLinks links={socialLinks} className="mt-4" />
           </div>
 
           <nav aria-labelledby="pie-navegacion">
@@ -30,7 +27,7 @@ export function Footer() {
               <ul className="mt-3 space-y-1">
                 {navItems.map((item) => (
                   <li key={item.href}>
-                    <TextLink href={item.href}>{item.label}</TextLink>
+                    <TextLink href={navItemHref(item.href, home)}>{item.label}</TextLink>
                   </li>
                 ))}
               </ul>
@@ -43,11 +40,7 @@ export function Footer() {
               <ul className="mt-3 space-y-1">
                 {categories.map((c) => (
                   <li key={c.id}>
-                    <TextLink asChild>
-                      <button type="button" onClick={() => openTreatment({ categoryId: c.id })}>
-                        {c.title}
-                      </button>
-                    </TextLink>
+                    <TextLink href={treatmentCategoryHref(c.id)}>{c.title}</TextLink>
                   </li>
                 ))}
               </ul>

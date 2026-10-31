@@ -1,26 +1,26 @@
 import { CalendarDays, Gift } from "lucide-react";
 import { BookingButton } from "@/components/brand/BookingButton";
-import { useTreatmentDialog } from "@/components/patterns/TreatmentDialog";
+import { treatmentCategoryHref } from "@/features/treatments";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { BrandButton } from "@/components/brand/ui/brand-button";
 import { Card } from "@/components/ui/card";
 import { Photo } from "@/components/ui/photo";
-import { PranaIcon } from "@/components/ui/prana-icon";
+import { PranaIcon } from "@/components/brand/ui/prana-icon";
 import { Surface } from "@/components/ui/surface";
-import { Heading, Text } from "@/components/ui/typography";
-import { formatDay, formatPrice } from "@/data/promotions";
-import { treatmentRefLabel } from "@/data/treatments";
-import type { Promotion } from "@/types";
+import { Heading, Script, Text } from "@/components/ui/typography";
+import { cn } from "@/lib/utils";
+import { formatPrice, promotionPeriod } from "@/data/promotions";
+import { treatmentRefLabel } from "@/features/treatments";
+import type { ArchivedPromotion, Promotion } from "@/types";
 
 /** Promoción vigente: foto, descuento, tratamientos incluidos, precio y vigencia. */
-export function PromotionCard({ promotion }: { promotion: Promotion }) {
-  const { openTreatment } = useTreatmentDialog();
-
+export function PromotionCard({ promotion, featured = false, upcoming = false }: { promotion: Promotion | ArchivedPromotion; featured?: boolean; upcoming?: boolean }) {
+  const archived = promotion.status === "archived";
   return (
-    <Card variant="media" className="w-full">
+    <Card variant="media" role="article" aria-label={promotion.name} className={cn("w-full", featured && "md:grid md:grid-cols-2")}>
       <div className="relative">
         <Photo
-          framing="promo"
+          framing={featured ? "offer" : "promo"}
           src={promotion.image}
           alt={promotion.imageAlt}
           width={1536}
@@ -34,53 +34,93 @@ export function PromotionCard({ promotion }: { promotion: Promotion }) {
           </Badge>
         )}
       </div>
-      <div className="flex flex-1 flex-col p-5">
-        <Heading as="h3" variant="block">
+      <div className={cn("flex flex-1 flex-col p-5", featured && "sm:p-8")}>
+        {archived && <Badge variant="secondary" className="mb-4">Promoción pasada · No vigente</Badge>}
+        {archived && promotion.periodLabel && <Text variant="small-muted" className="mb-2">{promotion.periodLabel}</Text>}
+        {promotion.campaign && <Badge variant="secondary" className="mb-4">{upcoming ? `Próximamente · ${promotion.campaign}` : promotion.campaign}</Badge>}
+        <Heading as="h3" variant={featured ? "section" : "block"}>
           {promotion.name}
         </Heading>
+        {promotion.tagline && <Script variant="inline" className="mt-2">{promotion.tagline}</Script>}
         <Text variant="small" className="mt-2">
           {promotion.description}
         </Text>
-        {promotion.treatments.length > 0 && (
-          <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Tratamientos incluidos">
-            {promotion.treatments.map((ref) => (
-              <li key={`${ref.categoryId}-${ref.slug ?? "categoria"}`}>
-                <Button type="button" variant="chip" size="chip" onClick={() => openTreatment(ref)}>
-                  {treatmentRefLabel(ref)}
-                </Button>
+        {archived && promotion.offerLabel && <Text variant="emphasis" className="mt-4">{promotion.offerLabel}</Text>}
+        {archived && promotion.discounts && (
+          <Text asChild variant="small">
+            <dl aria-label="Descuentos anunciados" className="mt-5 flex flex-col gap-3">
+              {promotion.discounts.map((discount) => (
+                <div key={discount.label} className="flex flex-wrap items-center justify-between gap-2">
+                  <dt>{discount.label}</dt>
+                  <Text asChild variant="label"><dd>{discount.percent}% de descuento</dd></Text>
+                </div>
+              ))}
+            </dl>
+          </Text>
+        )}
+        {promotion.includes && (
+          <ul aria-label="El paquete incluye" className="mt-6 flex flex-col gap-4">
+            {promotion.includes.map((item) => (
+              <li key={item.label} className="flex items-center gap-3">
+                <PranaIcon name={item.icon} frame="disc" size={48} className="size-12" />
+                <Text asChild variant="emphasis">
+                  <span>{item.quantity ? `${item.quantity} ` : ""}{item.label}</span>
+                </Text>
+                {item.free && <Badge variant="secondary">Gratis</Badge>}
               </li>
             ))}
           </ul>
         )}
-        <Text asChild variant="small">
-          <dl className="mt-4 space-y-1">
+        {promotion.treatments.length > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={archived ? "Información de los tratamientos" : "Tratamientos incluidos"}>
+            {promotion.treatments.map((ref) => (
+              <li key={`${ref.categoryId}-${ref.slug ?? "categoria"}`}>
+                <BrandButton asChild variant="chip" size="chip">
+                  <a href={treatmentCategoryHref(ref.categoryId, ref.slug)}>{treatmentRefLabel(ref)}</a>
+                </BrandButton>
+              </li>
+            ))}
+          </ul>
+        )}
+        {(!archived || promotion.priceCents !== undefined || promotion.depositCents !== undefined) && <Text asChild variant="small">
+          <dl className="mt-6 flex flex-col gap-3">
             {promotion.priceCents !== undefined && (
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <Text asChild variant="muted">
-                  <dt>Precio:</dt>
+                  <dt>{archived ? "Precio anunciado · MXN" : "Inversión total · MXN"}</dt>
                 </Text>
-                <Text asChild variant="label">
+                <Text asChild variant="price">
                   <dd>{formatPrice(promotion.priceCents)}</dd>
                 </Text>
               </div>
             )}
-            <div className="flex items-center gap-2">
+            {promotion.depositCents !== undefined && (
+              <div className="flex flex-wrap gap-2">
+                <dt>Apartado:</dt>
+                <Text asChild variant="label"><dd>{formatPrice(promotion.depositCents)} MXN</dd></Text>
+              </div>
+            )}
+            {!archived && <div className="flex items-center gap-2">
               <Text asChild variant="muted">
                 <dt className="flex items-center gap-1.5">
                   <CalendarDays aria-hidden="true" className="size-4" />
-                  Vigente hasta:
+                  {upcoming ? "Disponible:" : "Vigencia:"}
                 </dt>
               </Text>
-              <dd>{formatDay(promotion.endsOn)}</dd>
-            </div>
+              <dd>{promotionPeriod(promotion)}</dd>
+            </div>}
           </dl>
-        </Text>
-        <BookingButton
+        </Text>}
+        {promotion.reservationNote && <Text variant="small" className="mt-3">{promotion.reservationNote}</Text>}
+        {!archived && <BookingButton
           origin="promocion"
           treatment={promotion.cta.treatment ?? `la promoción ${promotion.name}`}
           label={promotion.cta.label}
           className="mt-5 w-full"
-        />
+        />}
+        <Text variant="note" className="mt-3">{archived
+          ? "Oferta finalizada. Los precios y condiciones mostrados son históricos."
+          : "La clínica confirma disponibilidad y condiciones por WhatsApp. Los resultados varían en cada persona."}</Text>
       </div>
     </Card>
   );
@@ -88,8 +128,6 @@ export function PromotionCard({ promotion }: { promotion: Promotion }) {
 
 /** Sin promociones vigentes: se invita a preguntar por WhatsApp o a ver los paquetes. */
 export function EmptyPromotions() {
-  const { openTreatment } = useTreatmentDialog();
-
   return (
     <Surface variant="panel" className="relative isolate overflow-hidden p-8 text-center sm:p-12">
       <Photo framing="texture" src="/img/fondo-1280.webp" alt="" width={1280} height={720} loading="lazy" decoding="async" />
@@ -107,15 +145,16 @@ export function EmptyPromotions() {
           treatment="paquetes y promociones disponibles"
           label="Preguntar por promociones"
         />
-        <Button
-          type="button"
+        <BrandButton
+          asChild
           variant="cta-outline"
           size="cta"
-          onClick={() => openTreatment({ categoryId: "promociones" })}
         >
-          <Gift className="size-4" />
-          Ver paquetes
-        </Button>
+          <a href={treatmentCategoryHref("promociones")}>
+            <Gift className="size-4" />
+            Ver paquetes
+          </a>
+        </BrandButton>
       </div>
     </Surface>
   );

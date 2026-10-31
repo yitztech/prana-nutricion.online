@@ -18,6 +18,8 @@ const photoVariants = cva("object-cover", {
       thumb: "h-18 w-20 shrink-0",
       /** Foto de una promoción. */
       promo: "aspect-3/2 w-full",
+      /** Fotografía de una oferta destacada: llena la columna junto a sus condiciones. */
+      offer: "aspect-3/2 size-full md:aspect-auto",
     },
   },
 })

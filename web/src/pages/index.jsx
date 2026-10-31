@@ -4,6 +4,7 @@ import { ServiceCard } from "@/components/service-card";
 import { BookingLink } from "@/components/booking-link";
 import { ContactForm } from "@/components/contact-form";
 import { Icon } from "@/components/icon";
+import { Catalog } from "@/components/catalog";
 
 const services = [
   {
@@ -181,6 +182,7 @@ export default function Page() {
             ))}
           </div>
         </section>
+        <Catalog />
         <section
           id="como-agendar"
           aria-labelledby="agendar-titulo"

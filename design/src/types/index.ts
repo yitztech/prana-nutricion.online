@@ -54,6 +54,7 @@ export type Category = {
 export type TreatmentRef = { categoryId: string; slug?: string };
 
 export type Benefit = {
+  id: string;
   icon: IconName;
   title: string;
   treatments: TreatmentRef[];
@@ -63,9 +64,14 @@ export type Promotion = {
   id: string;
   name: string;
   description: string;
+  campaign?: string;
+  tagline?: string;
+  includes?: { quantity?: number; label: string; icon: IconName; free?: boolean }[];
   treatments: TreatmentRef[];
   /** Precio en centavos de MXN. Sin él, no se muestra precio. */
   priceCents?: number;
+  depositCents?: number;
+  reservationNote?: string;
   /** Descuento en porcentaje (1–100). */
   discountPercent?: number;
   /** Vigencia como AAAA-MM-DD, en la hora de Cuautla; `endsOn` es el último día incluido. */
@@ -76,4 +82,12 @@ export type Promotion = {
   image: string;
   imageAlt: string;
   cta: { label: string; treatment?: string };
+};
+
+/** Archivo informativo: sin fechas inventadas ni acción para contratar una oferta vencida. */
+export type ArchivedPromotion = Omit<Promotion, "startsOn" | "endsOn" | "status" | "cta"> & {
+  status: "archived";
+  periodLabel?: string;
+  offerLabel?: string;
+  discounts?: { label: string; percent: number }[];
 };

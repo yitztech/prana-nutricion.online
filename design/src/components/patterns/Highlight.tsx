@@ -1,4 +1,4 @@
-import { PranaIcon } from "@/components/ui/prana-icon";
+import { PranaIcon } from "@/components/brand/ui/prana-icon";
 import { Text } from "@/components/ui/typography";
 import type { Highlight as HighlightData } from "@/types";
 

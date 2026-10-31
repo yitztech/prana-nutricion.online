@@ -1,10 +1,10 @@
 import { ArrowRight } from "lucide-react";
 import type { ComponentProps } from "react";
 import { WhatsAppIcon } from "@/components/brand/BrandIcons";
-import { Button } from "@/components/ui/button";
+import { BrandButton } from "@/components/brand/ui/brand-button";
 import { bookingUrl } from "@/lib/booking";
 
-type BookingButtonProps = Omit<ComponentProps<typeof Button>, "asChild" | "children" | "variant"> & {
+type BookingButtonProps = Omit<ComponentProps<typeof BrandButton>, "asChild" | "children" | "variant"> & {
   treatment?: string;
   origin: string;
   label?: string;
@@ -24,7 +24,7 @@ export function BookingButton({
   ...props
 }: BookingButtonProps) {
   return (
-    <Button asChild variant="cta" size={size} {...props}>
+    <BrandButton asChild variant="cta" size={size} {...props}>
       <a
         href={bookingUrl(treatment)}
         target="_blank"
@@ -38,6 +38,6 @@ export function BookingButton({
         {arrow && <ArrowRight className="size-4" />}
         <span className="sr-only"> (abre WhatsApp)</span>
       </a>
-    </Button>
+    </BrandButton>
   );
 }
