@@ -4,4 +4,4 @@
 90004	IGNORE	(Sin COEP: bloquearía el script de Umami y los recursos de terceros; no se usa SharedArrayBuffer)
 # 10109 (Modern Web Application) es informativo: el editor es una SPA a propósito. En el CI su dominio
 # es localhost (compose.ci.yml); el sitio, 127.0.0.1.
-10109	OUTOFSCOPE	http://localhost:[0-9]+/.*
+10109	OUTOFSCOPE	http://localhost:[0-9]+(/.*)?
