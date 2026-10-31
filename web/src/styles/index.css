@@ -1,0 +1,20 @@
+/*
+ * Entrada de estilos. Orden de las capas:
+ *   1. palettes/  colores en bruto de cada paleta (no se usan en componentes)
+ *   2. themes.css roles semánticos para claro y oscuro (apuntan a la paleta)
+ *   3. theme.css  conecta los roles con Tailwind (bg-primary, text-heading…) y define la escala
+ *   4. base.css   estilos de elementos HTML
+ *   5. utilities.css utilidades con nombre (degradados, máscaras, encuadres, rejillas)
+ * Cambiar de paleta: otro archivo en palettes/. Cambiar de modo: clase .dark en <html>.
+ */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource/parisienne/latin-400.css";
+@import "./fonts.css";
+@import "./palettes/prana.css";
+@import "./themes.css";
+@import "./theme.css";
+@import "./base.css";
+@import "./utilities.css";
+
+@custom-variant dark (&:where(.dark, .dark *));

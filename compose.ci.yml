@@ -1,7 +1,53 @@
 # Entorno de pruebas sobre compose.prod.yml (AGENTS.md §35): las mismas imágenes que se publican,
-# con el gateway en un puerto local (E2E_PUERTO, 8091 por defecto).
-#   docker compose -f compose.prod.yml -f compose.ci.yml up -d --wait
+# con el gateway en un puerto local (E2E_PUERTO, 8091 por defecto), PostgreSQL alcanzable desde las
+# pruebas (E2E_PG_PUERTO, 54329) y Mailpit para capturar los correos (perfil `pruebas`).
+#   docker compose -f compose.prod.yml -f compose.ci.yml --profile pruebas up -d --wait
+# Las variables obligatorias de compose.prod.yml (contraseñas de prueba incluidas) las pone
+# scripts/local-web.mjs, o el workflow en el CI.
 services:
   gateway:
     ports:
       - "127.0.0.1:${E2E_PUERTO:-8091}:80"
+
+  app:
+    environment:
+      # Las pruebas llaman a la API por http://127.0.0.1:8091; SITE_URL sigue siendo el dominio real
+      EXTRA_ORIGINS: http://127.0.0.1:${E2E_PUERTO:-8091}
+      # Sin https en local: la cookie no puede llevar Secure ni el prefijo __Host-
+      SESSION_COOKIE_SECURE: "false"
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      LOG_LEVEL: warn
+
+  postgres:
+    ports:
+      - "127.0.0.1:${E2E_PG_PUERTO:-54329}:5432"
+    # La red backend es interna: sin una red más, el puerto no se publica
+    networks: [backend, pruebas]
+
+  mailpit:
+    image: axllent/mailpit:v1.33.0
+    profiles: [pruebas]
+    labels:
+      prana.solo-pruebas: "true"
+    mem_limit: 64m
+    cpus: 0.25
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    ports:
+      - "127.0.0.1:${E2E_MAILPIT_PUERTO:-8025}:8025"
+    healthcheck:
+      test: [CMD, /mailpit, readyz]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [frontend]
+
+networks:
+  pruebas:

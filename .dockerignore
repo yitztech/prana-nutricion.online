@@ -6,7 +6,13 @@
 **/node_modules
 **/.DS_Store
 *.md
-# Pruebas y scripts: no entran en ninguna imagen
+# Pruebas, scripts, documentación y builds locales: no entran en ninguna imagen
 tests/
 scripts/
+docs/
 compose*.yml
+web/dist/
+**/*.test.ts
+.agents/
+.build/
+*.tmp.mjs

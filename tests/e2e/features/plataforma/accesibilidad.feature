@@ -13,10 +13,14 @@ Característica: Accesibilidad de las páginas públicas
       | /privacidad  |
       | /condiciones |
 
-    # Contraste de la paleta aprobada (2026-10-20): texto blanco sobre el rosa #D49CA8 (2,3:1) en los
-    # botones y el panel de contacto, y el roseGold #D3A59D como texto (2,0:1). WCAG AA pide 4,5:1.
-    # Cambiar esos colores es un cambio de diseño: espera la decisión del cliente.
-    @pendiente
-    Ejemplos:
-      | ruta |
-      | /    |
+  @FE-05
+  Escenario: La portada pasa axe con el diseño de reserva aprobado
+    Cuando abro la página "/"
+    Entonces axe no encuentra infracciones graves ni críticas
+
+  # La propuesta de reserva aprobada usa rosa oscuro y texto con contraste AA.
+  # Se conserva este escenario específico como puerta de regresión para la paleta.
+  @FE-05
+  Escenario: La paleta de la portada cumple el contraste de WCAG AA
+    Cuando abro la página "/"
+    Entonces axe no encuentra infracciones de contraste

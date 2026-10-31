@@ -1,0 +1,93 @@
+/*
+ * Utilidades con nombre para lo que la escala de Tailwind no cubre.
+ * Los componentes las usan como cualquier clase (también con variantes: md:fade-none).
+ */
+
+/* Degradados del tema */
+@utility bg-gradient-cta {
+  background-image: linear-gradient(90deg, var(--cta-from), var(--cta-to));
+}
+@utility bg-gradient-soft {
+  background-image: linear-gradient(135deg, var(--soft-from) 0%, var(--soft-via) 55%, var(--soft-to) 100%);
+}
+@utility bg-gradient-panel {
+  background-image: linear-gradient(180deg, var(--panel-from) 0%, var(--panel-via) 55%, var(--panel-to) 100%);
+}
+@utility bg-gradient-band {
+  background-image: linear-gradient(90deg, var(--band-from) 0%, var(--band-via) 50%, var(--band-to) 100%);
+}
+
+/* Máscaras de desvanecido para fotografías */
+@utility fade-arch {
+  mask-image: linear-gradient(to bottom, black 75%, transparent), linear-gradient(to right, transparent, black 18%);
+  mask-composite: intersect;
+}
+@utility fade-right {
+  mask-image: linear-gradient(to right, black 75%, transparent);
+}
+@utility fade-x {
+  mask-image: linear-gradient(to right, transparent, black 10%, black 82%, transparent);
+}
+@utility fade-none {
+  mask-image: none;
+}
+
+/* Fotos de fondo con texto encima: el tema decide su brillo. */
+@utility photo-dim {
+  filter: brightness(var(--photo-brightness));
+}
+
+/* Logo coloreado por el tema */
+@utility mask-logo-mark {
+  mask: url("/img/logo-mandala.webp") center / contain no-repeat;
+}
+@utility mask-logo-ink {
+  mask: url("/img/logo-texto.webp") center / contain no-repeat;
+}
+
+/* Encuadres de fotografía (object-position) */
+@utility object-face-right {
+  object-position: 95% top;
+}
+@utility object-face-center {
+  object-position: 70% center;
+}
+@utility object-face-top {
+  object-position: right top;
+}
+@utility object-scene {
+  object-position: 75% center;
+}
+
+/* Medidas de composición */
+@utility min-h-hero {
+  min-height: min(35vw, 58rem);
+}
+@utility max-h-dialog {
+  max-height: 92dvh;
+}
+@utility w-drawer {
+  width: min(20rem, 85vw);
+}
+@utility pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+/* Foto que se alinea con el contenedor de 100rem en pantallas anchas. */
+@utility photo-anchor {
+  left: max(0px, calc(50% - 50rem));
+  width: min(calc(50vw + 22rem), 72rem);
+}
+
+/* Rejillas con columnas propias */
+@utility grid-cols-content-aside {
+  grid-template-columns: 1fr 22rem;
+}
+@utility grid-cols-sidebar {
+  grid-template-columns: 14rem 1fr;
+}
+@utility grid-cols-contact {
+  grid-template-columns: 1.1fr 1fr;
+}
+@utility grid-cols-footer {
+  grid-template-columns: 1.3fr 1fr 1fr 1.3fr;
+}

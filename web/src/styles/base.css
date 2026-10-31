@@ -1,0 +1,46 @@
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+  /* El mockup de escritorio está compuesto a ~1100 px: en pantallas anchas se escala todo el rem. */
+  @media (min-width: 1440px) {
+    html {
+      font-size: 17px;
+    }
+  }
+  @media (min-width: 1800px) {
+    html {
+      font-size: 18px;
+    }
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-serif;
+  }
+  address {
+    font-style: normal;
+  }
+  /* Destinos de lectura enfocados al navegar a un tratamiento, sin marco alrededor del contenido. */
+  article[tabindex="-1"]:focus {
+    outline: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

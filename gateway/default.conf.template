@@ -1,7 +1,7 @@
 # Gateway de producción detrás del proxy de Coolify (Traefik).
 #
 # Traefik termina TLS y redirige http → https; este nginx escucha en HTTP (80) y
-# reparte por ruta entre los servicios del compose. De inicio todo va a `web`.
+# reparte por ruta: /api/ al servicio `app` (Node) y el resto a `web` (nginx con el sitio generado).
 # Las variables ${...} las sustituye el entrypoint de nginx al arrancar.
 server_tokens off;
 
@@ -9,6 +9,7 @@ server_tokens off;
 # vuelve a consultar el DNS interno de Docker y sigue la IP nueva sin reiniciarse.
 resolver 127.0.0.11 valid=10s ipv6=off;
 upstream web_upstream { zone web_upstream 64k; server web:80 resolve; keepalive 16; }
+upstream app_upstream { zone app_upstream 64k; server app:3000 resolve; keepalive 8; }
 
 # ── IP real del cliente ─────────────────────────────────────────────
 # Solo se confía en X-Forwarded-For si llega de la red donde está Traefik
@@ -37,6 +38,31 @@ server {
         add_header Content-Type application/json;
         add_header Cache-Control "no-store";
         return 200 '{"revision":"${RELEASE_SHA}"}';
+    }
+
+    # API del editor. Cuerpo JSON de 1 MB como máximo (§23); la subida de imágenes, el suyo.
+    location /api/ {
+        client_max_body_size 1m;
+        include /etc/nginx/snippets/proxy-headers.conf;
+        include /etc/nginx/snippets/api-headers.conf;
+        proxy_read_timeout 60s;
+        proxy_pass http://app_upstream;
+    }
+    location = /api/admin/uploads {
+        # 8 MB de imagen más la envoltura multipart (shared/limits.ts, promotionImage.maxBytes)
+        client_max_body_size 9m;
+        proxy_request_buffering on;
+        include /etc/nginx/snippets/proxy-headers.conf;
+        include /etc/nginx/snippets/api-headers.conf;
+        proxy_read_timeout 60s;
+        proxy_pass http://app_upstream;
+    }
+
+    # Editor del sitio: sin analítica; la vista previa de una imagen elegida usa blob:
+    location /admin {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        include /etc/nginx/snippets/admin-headers.conf;
+        proxy_pass http://web_upstream;
     }
 
     location / {

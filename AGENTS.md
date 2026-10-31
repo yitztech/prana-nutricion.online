@@ -962,23 +962,35 @@ traza y el vídeo solo de los escenarios que fallan, en `tests/e2e/results/`. La
 
 Lo específico de este repositorio: comandos de verificación, convenciones propias, decisiones de arquitectura.
 
-- **Qué es**: la landing de Prana & Nutrición (Cuautla, Morelos, México). HTML estático en `web/public/`, sin
+- **Qué es**: la landing de Prana & Nutrición (Cuautla, Morelos, México). HTML estático generado desde `web/src/pages/` con React y shadcn/ui, servido desde `web/public/`, sin
   backend, API ni base de datos. Por eso no hay suites de API ni de base de datos, ni check `Base de datos`.
 - **Idioma**: solo español de México, tuteando («Agenda tu consulta»). `<html lang="es">`, `og:locale` `es_MX`.
   Sin catálogos de traducción mientras haya un solo idioma (sección 9.1 y las reglas I18N no aplican).
 - **Estilos**: Tailwind CSS 4, compilado en el build (`npm run build`, o `npm run dev` mientras se edita). El
-  tema (colores y fuentes) está en `web/src/styles.css`; el CSS generado no se versiona.
+  tema (colores y fuentes) está en `web/src/styles.css`; el CSS y el HTML generados no se versionan.
 - **Nada de terceros en el navegador**: fuentes (Outfit y Playfair Display, OFL), iconos (sprite
   `web/public/assets/iconos.svg` de Font Awesome Free, CC BY 4.0) e imágenes (WebP) se sirven desde el propio
   dominio. La CSP del gateway solo permite el dominio y Umami. Un icono nuevo se añade al sprite desde
   `@fortawesome/fontawesome-free` con su `<symbol id>` y su `viewBox`.
-- **JavaScript**: `web/public/assets/main.js`, sin dependencias: navegación, menú móvil y formulario. El CSS y
+- **JavaScript del navegador**: `web/public/assets/main.js`, sin dependencias: navegación, menú móvil y formulario. El CSS y
   el JS llevan huella en el nombre al construir la imagen (web/Dockerfile) y se guardan en caché un año.
 - **Formulario de contacto**: no envía nada al servidor; abre WhatsApp (`wa.me/527772095094`) con el mensaje
   ya escrito. Aplica §6.2 y §6.3 (nombre 50, teléfono 20 y de 8 a 15 dígitos, mensaje 2000 con contador). El
   teléfono no se valida con libphonenumber: no se guarda ni se procesa, solo viaja en el texto de WhatsApp.
 - **Imágenes**: cada una en 640 y 1024 px (`cwebp -q 78 -resize <ancho> 0`), con `srcset`, `width`/`height` y
   `loading="lazy"` fuera de la primera pantalla. `assets/img/og.jpg` (1200×630) es la de redes sociales.
-- **Pendiente del cliente**: el contraste de la paleta (blanco sobre `rose` y texto `roseGold`) no llega a
-  WCAG AA; el escenario de axe de la portada está `@pendiente` hasta que se decida. Los textos legales
-  (`/privacidad`, `/condiciones`) necesitan la razón social y una revisión legal (WEB-03).
+- **Accesibilidad de la portada**: el diseño de reserva aprobado conserva la paleta y usa rosa oscuro
+  para la acción principal; axe incluye contraste en portada y páginas legales.
+- **Pendiente del cliente**: los textos legales (`/privacidad`, `/condiciones`) necesitan la razón social y
+  una revisión legal (WEB-03).
+
+- **shadcn/ui**: configuración en `components.json`, alias `@/` a `web/src/`. Componentes locales en
+  `web/src/components/ui/`; skill del proyecto en `.agents/skills/shadcn/SKILL.md`. Usar esa skill al modificar
+  componentes. React se ejecuta solo durante el build: no añadir hidratación ni un runtime cliente sin necesidad.
+- **Páginas**: editar el JSX y la plantilla de cabecera en `web/src/pages/`, nunca el HTML generado en
+  `web/public/`. `npm run build` prerenderiza las cuatro páginas y compila Tailwind. `npm run dev` observa
+  `web/src/` y regenera ambos. Se conservan los IDs que usa `assets/main.js` y los contratos de las pruebas E2E.
+
+- **Reserva directa**: `BookingLink` (Button de shadcn con `asChild`) usa enlaces nativos a WhatsApp desde
+  `web/src/lib/booking.js`, sin exigir el formulario ni depender de JavaScript. Nunca mostrar una reserva
+  confirmada antes de acordarla con la clínica. La barra móvil respeta el área segura y no cubre el pie.

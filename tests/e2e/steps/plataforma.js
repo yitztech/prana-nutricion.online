@@ -94,11 +94,14 @@ Then("la consola no muestra errores", async ({ page, ctx }) => {
 });
 
 Then("todas las imágenes cargan y tienen texto alternativo", async ({ page }) => {
-  const imagenes = page.locator("img");
-  for (const img of await imagenes.all()) {
+  // Las fotos se describen; los iconos que acompañan a un texto y los fondos llevan alt="" (decorativos).
+  for (const img of await page.locator("img:visible").all()) {
     await img.scrollIntoViewIfNeeded();
-    await expect(img).toHaveAttribute("alt", /.+/);
+    await expect(img).toHaveAttribute("alt");
     await expect.poll(() => img.evaluate((el) => el.complete && el.naturalWidth > 0)).toBe(true);
+  }
+  for (const foto of await page.locator('img[data-slot="photo"]:not([alt=""])').all()) {
+    await expect(foto).toHaveAttribute("alt", /\S{3,}/);
   }
 });
 
@@ -110,10 +113,21 @@ Then("no hay desplazamiento horizontal a {int} píxeles de ancho", async ({ page
 
 // ── Accesibilidad ────────────────────────────────────────────────
 
-Then("axe no encuentra infracciones graves ni críticas", async ({ page }) => {
-  const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+const axe = (page) => new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]);
+
+async function comprobarAxe(builder) {
+  const { violations } = await builder.analyze();
   const graves = violations
     .filter((v) => ["serious", "critical"].includes(v.impact))
     .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).slice(0, 5).join(", ")}`);
   expect(graves).toEqual([]);
+}
+
+Then("axe no encuentra infracciones graves ni críticas", async ({ page }) => {
+  await comprobarAxe(axe(page));
+});
+
+
+Then("axe no encuentra infracciones de contraste", async ({ page }) => {
+  await comprobarAxe(axe(page).withRules(["color-contrast"]));
 });

@@ -39,6 +39,7 @@ services:
       UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
     depends_on:
       web: { condition: service_healthy }
+      app: { condition: service_healthy }
     healthcheck:
       test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1/healthz"]
       interval: 15s
@@ -46,17 +47,15 @@ services:
       retries: 5
     networks: [frontend]
 
-  # La web del cliente. De inicio, una página estática; se sustituye por la aplicación real
-  # manteniendo el nombre del servicio, o se añaden servicios y rutas en el gateway.
-  # Variables que el alta pone a disposición del compose (añadir las que use la app):
-  #   SITE_URL, SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASSWORD, MAIL_FROM,
-  #   LISTMONK_URL, LISTMONK_LIST_UUID, UMAMI_SCRIPT_URL, UMAMI_WEBSITE_ID
+  # Sitio estático que genera `app` (volumen site, solo lectura), imágenes subidas y el editor.
   web:
     <<: *hardening
     image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-web:${IMAGE_TAG:-main}
     mem_limit: 64m
     cpus: 0.25
-    # Cada servicio responde /healthz (sin consultar dependencias) para su healthcheck
+    volumes:
+      - site:/srv/site:ro
+      - uploads:/srv/uploads:ro
     healthcheck:
       test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1/healthz"]
       interval: 15s
@@ -64,37 +63,102 @@ services:
       retries: 5
     networks: [frontend]
 
-  # Base de datos, si la app la necesita. La contraseña la genera el alta: en la ficha,
-  #   cliente_web_env_secretos: { POSTGRES_PASSWORD: db }
-  # El backup de la plataforma vuelca cada contenedor PostgreSQL en marcha.
-  #
-  # postgres:
-  #   <<: *hardening
-  #   image: postgres:18.6-alpine
-  #   # El entrypoint arranca como root, ajusta el dueño del directorio de datos (CHOWN), lo
-  #   # recorre ya siendo de postgres en cada rearranque (DAC_READ_SEARCH) y baja a ese usuario
-  #   # (SETGID, SETUID). El socket y los temporales van en tmpfs.
-  #   cap_add: [CHOWN, DAC_READ_SEARCH, SETGID, SETUID]
-  #   tmpfs: [/tmp, /var/run/postgresql]
-  #   mem_limit: 512m
-  #   cpus: 1.0
-  #   environment:
-  #     POSTGRES_DB: app
-  #     POSTGRES_USER: app
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
-  #   volumes:
-  #     - postgres-data:/var/lib/postgresql   # PostgreSQL 18: se monta en /var/lib/postgresql
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U app -d app"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 20
-  #   networks: [backend]
+  # API del editor (/api/), generación del sitio y cola de correos. Entra a PostgreSQL con su
+  # propio rol, sin superusuario (AGENTS.md §26).
+  app:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-app:${IMAGE_TAG:-main}
+    mem_limit: 256m
+    cpus: 0.5
+    environment:
+      NODE_OPTIONS: --max-old-space-size=192
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: prana
+      APP_DB_USER: prana_app
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Define APP_DB_PASSWORD}
+      SITE_URL: ${SITE_URL:?Define SITE_URL}
+      SMTP_HOST: ${SMTP_HOST:?Define SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:?Define SMTP_PORT}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:?Define MAIL_FROM}
+    volumes:
+      - site:/srv/site
+      - uploads:/srv/uploads
+    depends_on:
+      postgres: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:3000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    # frontend: el gateway y el SMTP de la plataforma; backend: PostgreSQL
+    networks: [frontend, backend]
 
-# volumes:
-#   postgres-data:
+  # Migraciones (§27): crea el rol de la app, aplica las migraciones y carga el contenido inicial.
+  # Termina; si falla, `app` no arranca.
+  migrate:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-app:${IMAGE_TAG:-main}
+    restart: "no"
+    command: [node, app/src/migrate.ts]
+    mem_limit: 128m
+    cpus: 0.25
+    environment:
+      NODE_OPTIONS: --max-old-space-size=96
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: prana
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+      APP_DB_USER: prana_app
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Define APP_DB_PASSWORD}
+    depends_on:
+      postgres: { condition: service_healthy }
+    # Proceso de una sola ejecución: el healthcheck solo comprueba que Node responde
+    healthcheck:
+      test: [CMD, node, -e, "0"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [backend]
+
+  # Base de datos. La contraseña del superusuario y la del rol de la app las genera el alta:
+  #   cliente_web_env_secretos: { POSTGRES_PASSWORD: db, APP_DB_PASSWORD: db }
+  # El backup de la plataforma vuelca cada contenedor PostgreSQL en marcha.
+  postgres:
+    <<: *hardening
+    image: postgres:18.6-alpine3.24
+    # El entrypoint arranca como root, ajusta el dueño del directorio de datos (CHOWN), lo
+    # recorre ya siendo de postgres en cada rearranque (DAC_READ_SEARCH) y baja a ese usuario
+    # (SETGID, SETUID). El socket y los temporales van en tmpfs.
+    cap_add: [CHOWN, DAC_READ_SEARCH, SETGID, SETUID]
+    tmpfs: [/tmp, /var/run/postgresql]
+    mem_limit: 256m
+    cpus: 0.5
+    environment:
+      POSTGRES_DB: prana
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql   # PostgreSQL 18: se monta en /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d prana"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [backend]
+
+volumes:
+  postgres-data:
+  # HTML generado por `app` (lo sirve `web`). Se regenera solo: no hace falta en el backup.
+  site:
+  # Imágenes subidas desde el editor. El backup de la plataforma copia *_uploads.
+  uploads:
 
 networks:
   frontend:
-  # backend:
-  #   internal: true    # sin salida a internet: solo la app ↔ postgres
+  backend:
+    internal: true    # sin salida a internet: solo app y migrate ↔ postgres
