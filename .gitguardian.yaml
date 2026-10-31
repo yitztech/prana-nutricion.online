@@ -1,0 +1,17 @@
+# GitGuardian: credenciales de demostración que no protegen nada. Solo existen en pruebas y en el
+# entorno local o del CI (compose.ci.yml); producción recibe las suyas de la plataforma (Coolify).
+# El código de la app y compose.prod.yml siguen auditados.
+version: 2
+secret:
+  ignored_paths:
+    - "tests/**/*"            # cuentas y contraseñas generadas por las pruebas
+    - "**/*.test.ts"
+    - "**/*.test.mjs"
+    - "scripts/local-web.mjs" # contraseñas del compose local de pruebas
+    - "compose.ci.yml"
+  ignored_matches:
+    # Contraseñas del PostgreSQL de pruebas: las usan scripts/local-web.mjs y los workflows del CI
+    - name: postgres-ci
+      match: ci-postgres-solo-pruebas
+    - name: app-db-ci
+      match: ci-app-solo-pruebas-0001
