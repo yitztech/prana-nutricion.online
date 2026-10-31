@@ -49,6 +49,15 @@ export async function createTempDatabase(): Promise<TempDatabase> {
     async drop() {
       await app.end();
       await admin.end();
+      // Pool.end() no espera a que se cierren los sockets: si DROP … WITH (FORCE) llega antes,
+      // PostgreSQL termina esas conexiones y su error salta como excepción no capturada.
+      const deadline = Date.now() + 5_000;
+      while (Date.now() < deadline) {
+        const { rows: [{ open }] } = await root.query<{ open: number }>(
+          "SELECT count(*)::int AS open FROM pg_stat_activity WHERE datname = $1", [database]);
+        if (open === 0) break;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
       await root.query(`DROP DATABASE ${pg.escapeIdentifier(database)} WITH (FORCE)`);
       await root.query(`DROP ROLE IF EXISTS ${pg.escapeIdentifier(role)}`);
       await root.end();

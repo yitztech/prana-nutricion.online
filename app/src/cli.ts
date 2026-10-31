@@ -5,7 +5,7 @@
  *   node app/src/cli.ts admin:crear --correo ana@ejemplo.mx --nombre "Ana López"
  *       Crea una cuenta del editor. Sin terminal (stdin redirigido) lee la contraseña de stdin; en una
  *       terminal genera una provisional, la muestra una sola vez y pide cambiarla al entrar.
- *       En producción: docker compose exec app node src/cli.ts admin:crear …
+ *       En producción: docker compose exec app node app/src/cli.ts admin:crear …
  */
 import { randomBytes } from "node:crypto";
 import { mkdir } from "node:fs/promises";

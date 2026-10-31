@@ -20,8 +20,11 @@ COPY --from=build /app/web/dist/ web/dist/
 COPY shared/ shared/
 COPY app/src/ app/src/
 COPY app/migrations/ app/migrations/
-# Volúmenes del compose: Docker copia este dueño al crearlos (sitio generado e imágenes subidas)
-RUN mkdir -p /srv/site /srv/uploads && chown node:node /srv/site /srv/uploads
+# Sin herramientas de desarrollo en la imagen final (§31): npm, npx y corepack no se usan al ejecutar
+# y el npm de la imagen base arrastra sus propias vulnerabilidades. Volúmenes del compose: Docker copia
+# este dueño al crearlos (sitio generado e imágenes subidas).
+RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+ && mkdir -p /srv/site /srv/uploads && chown node:node /srv/site /srv/uploads
 # Usuario node de la imagen oficial, por UID: Kubernetes y Docker lo comprueban sin consultar /etc/passwd
 USER 1000:1000
 EXPOSE 3000
