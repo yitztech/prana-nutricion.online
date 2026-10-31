@@ -22,6 +22,7 @@ COPY app/src/ app/src/
 COPY app/migrations/ app/migrations/
 # Volúmenes del compose: Docker copia este dueño al crearlos (sitio generado e imágenes subidas)
 RUN mkdir -p /srv/site /srv/uploads && chown node:node /srv/site /srv/uploads
-USER node
+# Usuario node de la imagen oficial, por UID: Kubernetes y Docker lo comprueban sin consultar /etc/passwd
+USER 1000:1000
 EXPOSE 3000
 CMD ["node", "app/src/index.ts"]
