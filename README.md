@@ -111,6 +111,35 @@ Las acciones de terceros van fijadas por commit. Lo que la plataforma pone en el
   allí y la cookie `__Host-` (sin `Domain`) nunca llega al sitio público. El DNS y el dominio en Coolify/Traefik
   (al servicio `gateway`, puerto 80) los pone el alta en infra-ionos-vps. En local, el sitio es
   `http://127.0.0.1:8091` y el editor `http://localhost:8091` (`E2E_ADMIN_URL` para otro destino).
+- **Cuentas del editor** (sin registro ni «¿olvidaste tu contraseña?»): las crea y restablece Ansible con
+  una orden idempotente dentro del contenedor de la app. La imagen no lleva npm; la contraseña va **solo por
+  stdin**, nunca como argumento:
+
+  ```bash
+  printf %s "$CLAVE" | docker exec -i <contenedor-app> \
+    node app/src/cli.ts admin:asegurar --correo contacto@prana-nutricion.online --nombre "Prana" [--restablecer]
+  ```
+
+  - Sin la cuenta, la crea. Con ella, actualiza el nombre y **no toca la contraseña**, salvo con
+    `--restablecer`: entonces pone la de stdin, cierra sus sesiones, la desbloquea y avisa a su dueño.
+  - Una contraseña puesta así obliga a elegir otra al entrar (la conoce quien la generó).
+  - Salida: una línea JSON `{"changed":true|false,"action":"created|updated|password_reset|unchanged","email":"…"}`
+    para `changed_when`. Código 0 si va bien, 2 si los datos no son válidos (contraseña de menos de 16
+    caracteres o fácil de adivinar, correo o nombre inválidos) y 1 ante otro error.
+  - El contenedor se encuentra por sus etiquetas: `com.docker.compose.service=app` y el proyecto de Coolify.
+  - Ejemplo para el rol `cliente` (la contraseña, generada en `secretos-clientes/<id>/`):
+
+    ```yaml
+    - name: Cuenta del editor
+      ansible.builtin.command:
+        argv: [docker, exec, -i, "{{ contenedor_app }}", node, app/src/cli.ts, admin:asegurar,
+               --correo, "{{ cliente_admin_correo }}", --nombre, "{{ cliente_admin_nombre }}"]
+        stdin: "{{ lookup('ansible.builtin.file', secretos_dir ~ '/admin_editor') }}"
+        stdin_add_newline: false
+      register: cuenta_editor
+      changed_when: (cuenta_editor.stdout | from_json).changed
+      no_log: true
+    ```
 - **`TRUSTED_PROXY_CIDR`**: la subred de Traefik en la red de la app, medida tras el primer arranque
   (`docs/OPERACION.md` §4.3 de infra-ionos-vps) y fijada en la ficha.
 - **Correo** `contacto@prana-nutricion.online` (con `info@` y `hola@`) en el Stalwart de la plataforma, y

@@ -94,7 +94,7 @@ export async function conSesion(cuenta?: Cuenta) {
   const cliente = new Cliente();
   const r = await cliente.post("/api/auth/login", { email: c.email, password: c.password });
   if (r.status !== 200) throw new Error(`login ${r.status}: ${r.text}`);
-  return { cliente, cuenta: c };
+  return { cliente, cuenta: c, body: r.body };
 }
 
 /** Los intentos fallidos de un escenario no deben bloquear a los siguientes (límite por IP). */

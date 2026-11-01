@@ -110,7 +110,7 @@ server {
         proxy_pass http://web_upstream;
     }
 
-    # El panel es una sola página: cualquier otra ruta (/, /restablecer…) sirve /admin/ de `web`.
+    # El panel es una sola página: cualquier otra ruta (/, /tratamientos…) sirve /admin/ de `web`.
     location / {
         include /etc/nginx/snippets/proxy-headers.conf;
         include /etc/nginx/snippets/admin-headers.conf;

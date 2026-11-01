@@ -994,9 +994,14 @@ Lo específico de este repositorio: comandos de verificación, convenciones prop
 - **Editor**: en `admin.prana-nutricion.online` (`ADMIN_URL`), nunca en `/admin` del sitio público. Sin
   analítica, `noindex` y con su CSP (`gateway/snippets/admin-headers.conf`). Sus pruebas usan los dos dominios.
   Pantallas en `web/src/admin/` (acceso, tratamientos, promociones, textos legales, publicación y cuenta), con
-  primitivas de `components/ui/`; escenarios en `tests/e2e/features/editor/`. Las cuentas se crean en el
-  contenedor de la app con `npm run admin:crear -- --correo … --nombre …` (en una terminal da una contraseña
-  provisional; si no, la lee de stdin).
+  primitivas de `components/ui/`; escenarios en `tests/e2e/features/editor/`.
+- **Cuentas del editor**: es un panel de administración, sin registro ni recuperación de contraseña por
+  correo. Las crea y restablece la plataforma (Ansible) con `node app/src/cli.ts admin:asegurar` dentro del
+  contenedor de la app (contrato en `README.md`). Una contraseña puesta así obliga a elegir otra al entrar.
+  Contraseñas de 16 caracteres como mínimo y con fortaleza máxima de zxcvbn, sin palabras de la clínica ni
+  de la cuenta (`app/src/auth/strength.ts`); Argon2id de 64 MiB; sesión de 30 minutos sin uso y 8 horas
+  como máximo, con cookie `SameSite=Strict`; aviso por correo de cada inicio de sesión, del bloqueo por
+  intentos fallidos y de cada cambio de contraseña.
 
 - **Reserva directa**: `BookingLink` (Button de shadcn con `asChild`) usa enlaces nativos a WhatsApp desde
   `web/src/lib/booking.js`, sin exigir el formulario ni depender de JavaScript. Nunca mostrar una reserva

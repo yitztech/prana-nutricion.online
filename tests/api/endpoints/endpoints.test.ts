@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { limits } from "#shared/limits.ts";
-import { ADMIN, BASE, cerrar, Cliente, conSesion, documento, type Respuesta } from "../support/cliente.ts";
+import { ADMIN, BASE, cerrar, Cliente, conSesion, documento, limpiarIntentos, nuevaCuenta, type Respuesta } from "../support/cliente.ts";
 import { categoria, formulario, foto, promocion } from "../support/contenido.ts";
 
 let cliente: Cliente;
@@ -60,10 +60,18 @@ describe("autenticación", () => {
     problema(await new Cliente().post("/api/auth/login", "{no es json"), 400, "bad_request");
   });
 
-  test("restablecer: contraseña demasiado corta y token con formato inválido", async () => {
-    const anonimo = new Cliente();
-    campo(await anonimo.post("/api/auth/password-reset/confirm", { token: "a".repeat(43), password: "corta" }), "password", "out_of_range");
-    campo(await anonimo.post("/api/auth/password-reset/confirm", { token: "x", password: "una contraseña larga" }), "token", "invalid_format");
+  test("contraseña nueva: corta, fácil de adivinar o igual a la actual", async () => {
+    const cuenta = await nuevaCuenta();
+    const { cliente } = await conSesion(cuenta);
+    const cambiar = (newPassword: string) => cliente.post("/api/auth/password", { currentPassword: cuenta.password, newPassword });
+    campo(await cambiar("x".repeat(15)), "newPassword", "out_of_range");
+    for (const debil of ["passwordpassword", "1234567890123456", "qwertyuiopasdfgh", "PranaNutricion2026!", "cuautla-morelos-prana"]) {
+      campo(await cambiar(debil), "newPassword", "weak_password");
+    }
+    // Lo que se deduce de la cuenta tampoco vale.
+    campo(await cambiar(`${cuenta.email.split("@")[0]}!`), "newPassword", "weak_password");
+    campo(await cambiar(cuenta.password), "newPassword", "password_reused");
+    await limpiarIntentos(cuenta.email);
   });
 });
 

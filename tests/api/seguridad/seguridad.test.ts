@@ -8,7 +8,7 @@ after(cerrar);
 const id = "00000000-0000-7000-8000-000000000000";
 const privadas: [method: string, path: string, body?: unknown][] = [
   ["GET", "/api/auth/session"],
-  ["POST", "/api/auth/password", { currentPassword: "x", newPassword: "y".repeat(12) }],
+  ["POST", "/api/auth/password", { currentPassword: "x", newPassword: "y".repeat(16) }],
   ["GET", "/api/admin/legal"],
   ["GET", "/api/admin/legal/privacidad"],
   ["PUT", "/api/admin/legal/privacidad", { title: "x", body: documento("x") }],
@@ -103,14 +103,26 @@ describe("inicio de sesión (§24)", () => {
     await limpiarIntentos(cuenta.email, inexistente);
   });
 
-  test("la recuperación responde igual exista o no la cuenta", async () => {
+  test("un panel de administración no ofrece recuperar la contraseña por correo", async () => {
     const cuenta = await nuevaCuenta();
-    const inexistente = `nadie-${crypto.randomUUID()}@ejemplo.mx`;
-    const a = await new Cliente().post("/api/auth/password-reset", { email: cuenta.email });
-    const b = await new Cliente().post("/api/auth/password-reset", { email: inexistente });
-    assert.equal(a.status, 202);
-    assert.deepEqual(b.body, a.body);
-    await limpiarIntentos(cuenta.email, inexistente);
+    for (const [path, body] of [
+      ["/api/auth/password-reset", { email: cuenta.email }],
+      ["/api/auth/password-reset/confirm", { token: "a".repeat(43), password: "una frase larga cualquiera" }],
+    ] as const) {
+      assert.equal((await new Cliente().post(path, body)).status, 404, path);
+    }
+  });
+
+  test("con la contraseña que puso la plataforma solo se puede cambiarla", async () => {
+    const cuenta = await nuevaCuenta();
+    await db().query("UPDATE admin_users SET must_change_password = true WHERE id = $1", [cuenta.id]);
+    const { cliente, body } = await conSesion(cuenta);
+    assert.equal(body.user.mustChangePassword, true);
+    const bloqueada = await cliente.get("/api/admin/categories");
+    assert.equal(bloqueada.status, 403);
+    assert.equal(bloqueada.body.code, "password_change_required");
+    assert.equal((await cliente.post("/api/auth/password", { currentPassword: cuenta.password, newPassword: "girasol remo tejado brújula" })).status, 204);
+    assert.equal((await cliente.get("/api/admin/categories")).status, 200);
   });
 
   test("tras 5 fallos la cuenta se bloquea con 429 y Retry-After, aunque la contraseña sea buena", async () => {
@@ -141,12 +153,12 @@ describe("inicio de sesión (§24)", () => {
     }
   });
 
-  test("la cookie de sesión es HttpOnly, SameSite=Lax, Path=/ y no adivinable; cambia en cada inicio", async () => {
+  test("la cookie de sesión es HttpOnly, SameSite=Strict, Path=/ y no adivinable; cambia en cada inicio", async () => {
     const cuenta = await nuevaCuenta();
     const { cliente: primero } = await conSesion(cuenta);
     const cookie = primero.setCookies.find((c) => c.startsWith(`${COOKIE}=`))!;
     assert.match(cookie, /HttpOnly/i);
-    assert.match(cookie, /SameSite=Lax/i);
+    assert.match(cookie, /SameSite=Strict/i);
     assert.match(cookie, /Path=\//);
     assert.doesNotMatch(cookie, /Domain=/i);
     // Por https (producción) la cookie es __Host- y Secure; el entorno local va por http.
@@ -169,7 +181,8 @@ describe("respuestas", () => {
     const { cliente } = await conSesion();
     for (const path of ["/api/auth/session", "/api/admin/legal/privacidad", "/api/admin/categories", "/api/admin/promotions"]) {
       const r = await cliente.get(path);
-      assert.doesNotMatch(r.text, /\$argon2|password|token_hash|passwordHash/i, path);
+      // mustChangePassword es un indicador, no un secreto.
+      assert.doesNotMatch(r.text, /\$argon2|"password"|password_?hash|token_hash/i, path);
     }
   });
 

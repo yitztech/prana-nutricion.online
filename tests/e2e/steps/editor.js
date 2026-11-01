@@ -61,7 +61,7 @@ Then("el navegador guarda la sesión solo para el dominio del editor", async ({ 
   expect(sesion, "cookie de sesión en el dominio del editor").toBeTruthy();
   expect(sesion.domain).toBe(new URL(adminURL).hostname);
   expect(sesion.httpOnly).toBe(true);
-  expect(sesion.sameSite).toBe("Lax");
+  expect(sesion.sameSite).toBe("Strict");
   expect((await page.context().cookies(baseURL)).map((c) => c.name)).not.toContain(cookieSesion);
 });
 

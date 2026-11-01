@@ -14,7 +14,7 @@ Característica: El editor vive en su propio dominio
       | ruta               |
       | /admin             |
       | /admin/            |
-      | /admin/restablecer |
+      | /admin/cuenta      |
 
   # Sin @smoke: el dominio del editor en producción depende del alta en infra-ionos-vps.
   @solo-lectura @SEG-04
@@ -28,7 +28,7 @@ Característica: El editor vive en su propio dominio
     Ejemplos:
       | ruta         |
       | /            |
-      | /restablecer |
+      | /cuenta      |
 
   @sesion
   Escenario: La sesión del editor no llega al sitio público
