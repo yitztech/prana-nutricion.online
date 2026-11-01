@@ -1,10 +1,8 @@
 // Pasos de features/plataforma/editor-dominio.feature: el editor en su propio dominio (ADMIN_URL).
-import { randomBytes, randomUUID } from "node:crypto";
 import { expect } from "@playwright/test";
-import argon2 from "argon2";
-import pg from "pg";
 import { Given, When, Then } from "./fixtures.js";
-import { adminURL, baseURL, cookieSesion, pgURL } from "../support/entorno.js";
+import { adminURL, baseURL, cookieSesion } from "../support/entorno.js";
+import { nuevaCuenta } from "../support/editor.js";
 
 When("abro el editor en {string}", async ({ page, ctx }, ruta) => {
   ctx.respuesta = await page.goto(new URL(ruta, adminURL).href);
@@ -40,23 +38,22 @@ Then("el editor no carga nada de otros dominios", async ({ page }) => {
 });
 
 Given("que inicio sesión en el editor con una cuenta nueva", async ({ page }) => {
-  // Cuenta única por escenario, creada directamente en la base de datos del compose de pruebas.
-  const email = `e2e-${randomUUID()}@ejemplo.mx`;
-  const password = `clave-${randomBytes(9).toString("base64url")}`;
-  const hash = await argon2.hash(password, { type: argon2.argon2id, memoryCost: 19_456, timeCost: 2, parallelism: 1 });
-  const db = new pg.Client({ connectionString: pgURL, options: "-c search_path=prana" });
-  await db.connect();
-  try {
-    await db.query("INSERT INTO admin_users (email, name, password_hash) VALUES ($1, 'Persona de prueba', $2)", [email, hash]);
-  } finally {
-    await db.end();
-  }
+  const { email, password } = await nuevaCuenta();
   // page.request comparte las cookies con el navegador: es como iniciar sesión desde el panel.
   const r = await page.request.post(new URL("/api/auth/login", adminURL).href, {
     data: { email, password },
     headers: { origin: new URL(adminURL).origin, "x-requested-with": "prana-admin" },
   });
   expect(r.status(), await r.text()).toBe(200);
+});
+
+Then("la consola solo avisa de la sesión sin iniciar", async ({ page }) => {
+  // Al abrir el panel sin sesión, /api/auth/session responde 401 y el navegador lo anota: es lo esperado.
+  const errores = [];
+  page.on("console", (m) => m.type() === "error" && errores.push(`${m.text()} ${m.location().url}`));
+  page.on("pageerror", (e) => errores.push(e.message));
+  await page.reload({ waitUntil: "networkidle" });
+  expect(errores.filter((e) => !/401/.test(e) || !e.includes("/api/auth/session"))).toEqual([]);
 });
 
 Then("el navegador guarda la sesión solo para el dominio del editor", async ({ page }) => {

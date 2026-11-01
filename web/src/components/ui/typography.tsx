@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils"
 const headingVariants = cva("text-balance", {
   variants: {
     variant: {
+      /** Editor: título de cada pantalla (recibe el foco al llegar). */
+      page: "font-serif text-3xl font-bold text-heading outline-none md:text-4xl",
       /** Título de la portada. */
       display:
         "text-display leading-none font-bold tracking-tight text-heading sm:text-5xl md:text-6xl lg:text-7xl",
@@ -98,6 +100,8 @@ const textVariants = cva("", {
       intro: "text-sm text-foreground/80 sm:text-base",
       /** Texto secundario. */
       muted: "text-muted-foreground",
+      /** Editor: nombre de un elemento en una lista. */
+      "item-title": "font-semibold text-heading",
       /** Importe principal de una oferta, con cifras alineadas. */
       price: "font-sans text-4xl font-semibold text-primary tabular-nums sm:text-5xl",
       /** Texto pequeño. */

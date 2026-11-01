@@ -23,7 +23,7 @@ Característica: El editor vive en su propio dominio
     Entonces la página lleva las cabeceras de seguridad
     Y el editor queda fuera de los buscadores y sin analítica
     Y el editor no carga nada de otros dominios
-    Y la consola no muestra errores
+    Y la consola solo avisa de la sesión sin iniciar
 
     Ejemplos:
       | ruta         |

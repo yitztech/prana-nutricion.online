@@ -16,6 +16,8 @@ const textLinkVariants = cva(
         nav: "relative rounded-md px-3 py-2 text-nav font-medium text-foreground/85 after:absolute after:inset-x-3 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 after:transition-opacity hover:text-primary aria-[current]:text-primary aria-[current]:after:opacity-100",
         /** Navegación del menú móvil. */
         menu: "block rounded-lg px-3 py-3 text-base font-medium hover:bg-secondary aria-[current]:bg-secondary aria-[current]:text-primary",
+        /** Editor: pestaña de la navegación, resaltada en la sección actual (aria-current). */
+        tab: "block rounded-md px-3 py-2 text-sm whitespace-nowrap hover:bg-accent aria-[current]:bg-secondary aria-[current]:font-semibold aria-[current]:text-heading",
         /** Enlace para saltar al contenido: visible solo con el foco. */
         skip: "sr-only z-50 rounded-full bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3",
       },

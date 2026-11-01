@@ -993,6 +993,10 @@ Lo específico de este repositorio: comandos de verificación, convenciones prop
 
 - **Editor**: en `admin.prana-nutricion.online` (`ADMIN_URL`), nunca en `/admin` del sitio público. Sin
   analítica, `noindex` y con su CSP (`gateway/snippets/admin-headers.conf`). Sus pruebas usan los dos dominios.
+  Pantallas en `web/src/admin/` (acceso, tratamientos, promociones, textos legales, publicación y cuenta), con
+  primitivas de `components/ui/`; escenarios en `tests/e2e/features/editor/`. Las cuentas se crean en el
+  contenedor de la app con `npm run admin:crear -- --correo … --nombre …` (en una terminal da una contraseña
+  provisional; si no, la lee de stdin).
 
 - **Reserva directa**: `BookingLink` (Button de shadcn con `asChild`) usa enlaces nativos a WhatsApp desde
   `web/src/lib/booking.js`, sin exigir el formulario ni depender de JavaScript. Nunca mostrar una reserva
