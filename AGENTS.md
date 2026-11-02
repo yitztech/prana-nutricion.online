@@ -1002,6 +1002,9 @@ Lo específico de este repositorio: comandos de verificación, convenciones prop
   de la cuenta (`app/src/auth/strength.ts`); Argon2id de 64 MiB; sesión de 30 minutos sin uso y 8 horas
   como máximo, con cookie `SameSite=Strict`; aviso por correo de cada inicio de sesión, del bloqueo por
   intentos fallidos y de cada cambio de contraseña.
+  Límite de peticiones por IP real en memoria (`app/src/http/rate-limit.ts`, `@fastify/rate-limit`): 1200 por
+  minuto en toda la API y 300 en `/login` y `/password`; por encima, 429 `rate_limited` con `Retry-After`. Los
+  fallos de contraseña los cuenta además `auth/attempts.ts` en PostgreSQL (20 por IP y 5 por cuenta en 15 minutos).
 
 - **Reserva directa**: `BookingLink` (Button de shadcn con `asChild`) usa enlaces nativos a WhatsApp desde
   `web/src/lib/booking.js`, sin exigir el formulario ni depender de JavaScript. Nunca mostrar una reserva

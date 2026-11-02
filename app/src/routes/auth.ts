@@ -7,6 +7,7 @@ import { ABSOLUTE_HOURS, cookieName, createSession, deleteSession, deleteUserSes
 import { audit } from "../content/repository.ts";
 import { transaction } from "../db.ts";
 import { HttpProblem, validationFailed } from "../http/problem.ts";
+import { credentialsLimit } from "../http/rate-limit.ts";
 import { parse } from "../http/validate.ts";
 import { mails } from "../jobs/mail.ts";
 import { requireUser, type Deps } from "../server.ts";
@@ -35,7 +36,7 @@ export const authRoutes = (deps: Deps) => async (app: FastifyInstance) => {
   const name = cookieName(config.SESSION_COOKIE_SECURE);
   app.addHook("preHandler", sessionLoader(deps));
 
-  app.post("/login", async (request, reply) => {
+  app.post("/login", { config: { rateLimit: credentialsLimit } }, async (request, reply) => {
     const input = parse(loginSchema, request.body);
     await checkAttempts(pool, "login", request.realIp, input.email);
     const { rows: [user] } = await pool.query<{ id: string; email: string; name: string; password_hash: string; must_change_password: boolean }>(
@@ -77,7 +78,7 @@ export const authRoutes = (deps: Deps) => async (app: FastifyInstance) => {
     return { user: request.user };
   });
 
-  app.post("/password", async (request, reply) => {
+  app.post("/password", { config: { rateLimit: credentialsLimit } }, async (request, reply) => {
     if (requireUser(request, reply)) return reply;
     const input = parse(passwordChangeSchema, request.body);
     const user = request.user!;
