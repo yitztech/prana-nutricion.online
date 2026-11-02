@@ -8,14 +8,13 @@
  *       - si existe, actualiza el nombre y no toca la contraseña, salvo con --restablecer: entonces pone
  *         la de stdin, cierra sus sesiones, la desbloquea y avisa a su dueño por correo.
  *       Una contraseña puesta así la conoce alguien más: se pide cambiarla al entrar.
- *       La contraseña llega solo por stdin, nunca como argumento (quedaría en `ps` y en el historial). En
- *       una terminal, sin stdin, se genera una y se muestra una sola vez.
+ *       La contraseña llega solo por stdin, nunca como argumento (quedaría en `ps` y en el historial) ni se
+ *       muestra: sin stdin, la orden termina con código 2.
  *       Salida: una línea JSON {"changed":…,"action":"created|updated|password_reset|unchanged","email":…}.
  *       Códigos: 0 bien, 2 datos no válidos, 1 otro error.
  *       En producción, dentro del contenedor de la app (la imagen no lleva npm):
  *         printf %s "$CLAVE" | docker exec -i <contenedor-app> node app/src/cli.ts admin:asegurar --correo … --nombre …
  */
-import { randomBytes } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
@@ -64,8 +63,8 @@ if (command === "generar") {
   if (!email.success) fail(`--correo: ${fieldErrors(email.error)[0].message}`, 2);
   const name = adminNameSchema.safeParse(values.nombre ?? "");
   if (!name.success || !name.data) fail(`--nombre: ${name.success ? "Escribe un nombre." : fieldErrors(name.error)[0].message}`, 2);
-  const generated = process.stdin.isTTY;
-  const password = generated ? randomBytes(24).toString("base64url") : await readStdin();
+  if (process.stdin.isTTY) fail("Contraseña: pásala por stdin (printf %s \"$CLAVE\" | node app/src/cli.ts admin:asegurar …).", 2);
+  const password = await readStdin();
   const checked = newPassword.safeParse(password);
   if (!checked.success) fail(`Contraseña: ${fieldErrors(checked.error)[0].message}`, 2);
   if (!(await isStrongPassword(password, { email: email.data, name: name.data }))) fail(`Contraseña: ${WEAK_PASSWORD_MESSAGE}`, 2);
@@ -107,9 +106,6 @@ if (command === "generar") {
       await queueMailer(boss).send(mails.passwordChanged(email.data, config.ADMIN_URL));
     }
     console.log(JSON.stringify({ changed: result.action !== "unchanged", action: result.action, email: email.data }));
-    if (generated && result.action !== "unchanged" && result.action !== "updated") {
-      console.error(`Contraseña (se muestra una sola vez; se pedirá cambiarla al entrar): ${password}`);
-    }
   } finally {
     await boss.stop({ graceful: false }).catch(() => {});
     await pool.end();
