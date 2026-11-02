@@ -10,7 +10,7 @@ import { Link, match, useRouter } from "./lib/router";
 import { useSession } from "./lib/session";
 import { Loading } from "./components/layout";
 import { AccountPage } from "./pages/account";
-import { ForgotPasswordPage, LoginPage, ResetPasswordPage } from "./pages/auth";
+import { LoginPage } from "./pages/auth";
 import { HomePage } from "./pages/home";
 import { PromotionPage, PromotionsPage } from "./pages/promotions";
 import { CategoriesPage, CategoryPage, NotFoundContent } from "./pages/treatments";
@@ -24,7 +24,7 @@ const nav = [
   { to: "/cuenta", label: "Tu cuenta", section: "cuenta" },
 ];
 
-const publicRoutes = ["/entrar", "/recuperar", "/restablecer"];
+
 
 // El editor de texto enriquecido (Tiptap) solo se descarga al abrir un documento legal.
 const LegalPage = lazy(() => import("./pages/legal").then((m) => ({ default: m.LegalPage })));
@@ -45,16 +45,21 @@ function Screen({ path }: { path: string }) {
 
 function Shell({ path }: { path: string }) {
   const { state, signOut } = useSession();
+  // Hasta cambiar la contraseña que puso la plataforma, solo la cuenta: la API rechaza lo demás.
+  const locked = state.status === "signed-in" && state.user.mustChangePassword;
+  const items = locked ? nav.filter((item) => item.to === "/cuenta") : nav;
   const current = path.split("/").filter(Boolean).slice(0, path.startsWith("/legales") ? 2 : 1).join("/");
   return (
     <div className="min-h-dvh">
       <TextLink href="#contenido" variant="skip">Saltar al contenido</TextLink>
       <Surface asChild variant="header"><header>
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <TextLink asChild variant="default"><Link to="/" aria-label="Inicio del editor"><Logo className="h-10" /></Link></TextLink>
+          {locked ? <Logo className="h-10" /> : (
+            <TextLink asChild variant="default"><Link to="/" aria-label="Inicio del editor"><Logo className="h-10" /></Link></TextLink>
+          )}
           <nav aria-label="Secciones del editor" className="order-last w-full overflow-x-auto md:order-none md:w-auto md:flex-1">
             <ul className="flex gap-1">
-              {nav.map((item) => {
+              {items.map((item) => {
                 const active = current === item.section;
                 return (
                   <li key={item.to}>
@@ -84,16 +89,17 @@ function Shell({ path }: { path: string }) {
 export function App() {
   const { state } = useSession();
   const { path, navigate } = useRouter();
-  const isPublic = publicRoutes.includes(path);
+  const mustChange = state.status === "signed-in" && state.user.mustChangePassword;
 
-  // Sin sesión, a la entrada; con sesión, fuera de ella. /restablecer sirve en los dos casos.
+  // Sin sesión, a la entrada; con sesión, fuera de ella; con la contraseña de la plataforma, a la cuenta.
   useEffect(() => {
-    if (state.status === "anonymous" && !isPublic) navigate("/entrar", { replace: true });
-    if (state.status === "signed-in" && (path === "/entrar" || path === "/recuperar")) navigate("/", { replace: true });
-  }, [state.status, isPublic, path, navigate]);
+    if (state.status === "anonymous" && path !== "/entrar") navigate("/entrar", { replace: true });
+    if (state.status === "signed-in" && mustChange && path !== "/cuenta") navigate("/cuenta", { replace: true });
+    else if (state.status === "signed-in" && path === "/entrar") navigate("/", { replace: true });
+  }, [state.status, mustChange, path, navigate]);
 
   useEffect(() => {
-    const titles: Record<string, string> = { "/entrar": "Entrar", "/recuperar": "Restablecer la contraseña", "/restablecer": "Contraseña nueva" };
+    const titles: Record<string, string> = { "/entrar": "Entrar" };
     const label = titles[path] ?? nav.find((item) => item.to !== "/" && path.startsWith(item.to))?.label;
     document.title = label ? `${label} · Editor del sitio · Praná` : "Editor del sitio · Praná";
   }, [path]);
@@ -101,9 +107,6 @@ export function App() {
   if (state.status === "loading") {
     return <main id="contenido" className="flex min-h-dvh items-center justify-center"><Loading label="Abriendo el editor…" /></main>;
   }
-  if (path === "/restablecer") return <ResetPasswordPage />;
-  if (state.status === "anonymous") {
-    return path === "/recuperar" ? <ForgotPasswordPage /> : <LoginPage expired={state.expired} />;
-  }
-  return <Shell path={path} />;
+  if (state.status === "anonymous") return <LoginPage expired={state.expired} />;
+  return <Shell path={mustChange ? "/cuenta" : path} />;
 }

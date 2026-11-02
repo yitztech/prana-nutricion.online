@@ -39,7 +39,9 @@ export async function startMailWorker(boss: PgBoss, config: ServiceConfig, log: 
     greetingTimeout: 5_000,
     socketTimeout: 30_000,
   });
-  await boss.work<Mail>(MAIL_QUEUE, async (jobs) => {
+  // Un correo por trabajo (un fallo solo reintenta ese), con cuatro trabajadores: los avisos de seguridad
+  // (cada inicio de sesión) no esperan detrás de otros.
+  await boss.work<Mail>(MAIL_QUEUE, { batchSize: 1, localConcurrency: 4, pollingIntervalSeconds: 1 }, async (jobs) => {
     for (const job of jobs) {
       try {
         await transport.sendMail({ from: config.MAIL_FROM, to: job.data.to, subject: job.data.subject, text: job.data.text });
@@ -67,19 +69,34 @@ export function maskEmail(email: string) {
   return `${user?.slice(0, 1) ?? ""}***@${domain ?? ""}`;
 }
 
+/** Fecha y hora de la clínica, para los avisos de seguridad. */
+const clinicTime = (date: Date) =>
+  new Intl.DateTimeFormat("es-MX", { dateStyle: "long", timeStyle: "short", timeZone: "America/Mexico_City" }).format(date);
+
+/** Sin recuperación por correo: quien administra el sitio restablece la contraseña desde la plataforma. */
+const ifNotYou = "Si no fuiste tú, avisa cuanto antes a quien administra el sitio: puede cerrar todas las sesiones y restablecer la contraseña.";
+
 export const mails = {
-  passwordReset: (to: string, link: string): Mail => ({
+  newLogin: (to: string, adminUrl: string, when: Date): Mail => ({
     to,
-    subject: "Restablece tu contraseña del editor de Praná",
+    subject: "Nuevo inicio de sesión en el editor de Praná",
     text: [
       "Hola:",
       "",
-      "Recibimos una solicitud para restablecer la contraseña del editor del sitio de Praná: Nutrición y Bienestar.",
-      "Abre este enlace en la próxima hora para elegir una nueva:",
+      `Se inició sesión con tu cuenta en el editor del sitio de Praná: Nutrición y Bienestar (${adminUrl}/) el ${clinicTime(when)}.`,
       "",
-      link,
+      ifNotYou,
+    ].join("\n"),
+  }),
+  accountLocked: (to: string, minutes: number): Mail => ({
+    to,
+    subject: "Bloqueamos el acceso a tu cuenta del editor de Praná",
+    text: [
+      "Hola:",
       "",
-      "Si no lo pediste, ignora este correo: tu contraseña no cambia.",
+      `Hubo varios intentos fallidos de entrar con tu cuenta del editor del sitio de Praná: Nutrición y Bienestar. Por seguridad, el acceso queda bloqueado ${minutes} minutos.`,
+      "",
+      "Si fuiste tú, espera y vuelve a probar. Si no, tu contraseña sigue a salvo mientras nadie la conozca; aun así, avisa a quien administra el sitio.",
     ].join("\n"),
   }),
   passwordChanged: (to: string, adminUrl: string): Mail => ({
@@ -88,9 +105,9 @@ export const mails = {
     text: [
       "Hola:",
       "",
-      "La contraseña de tu cuenta del editor del sitio de Praná: Nutrición y Bienestar acaba de cambiar y se cerraron todas las sesiones abiertas.",
+      `La contraseña de tu cuenta del editor del sitio de Praná: Nutrición y Bienestar (${adminUrl}/) acaba de cambiar y se cerraron todas las sesiones abiertas.`,
       "",
-      `Si no fuiste tú, restablécela desde ${adminUrl}/ y avisa a quien administra el sitio.`,
+      ifNotYou,
     ].join("\n"),
   }),
 };

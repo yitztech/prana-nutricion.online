@@ -994,9 +994,17 @@ Lo específico de este repositorio: comandos de verificación, convenciones prop
 - **Editor**: en `admin.prana-nutricion.online` (`ADMIN_URL`), nunca en `/admin` del sitio público. Sin
   analítica, `noindex` y con su CSP (`gateway/snippets/admin-headers.conf`). Sus pruebas usan los dos dominios.
   Pantallas en `web/src/admin/` (acceso, tratamientos, promociones, textos legales, publicación y cuenta), con
-  primitivas de `components/ui/`; escenarios en `tests/e2e/features/editor/`. Las cuentas se crean en el
-  contenedor de la app con `npm run admin:crear -- --correo … --nombre …` (en una terminal da una contraseña
-  provisional; si no, la lee de stdin).
+  primitivas de `components/ui/`; escenarios en `tests/e2e/features/editor/`.
+- **Cuentas del editor**: es un panel de administración, sin registro ni recuperación de contraseña por
+  correo. Las crea y restablece la plataforma (Ansible) con `node app/src/cli.ts admin:asegurar` dentro del
+  contenedor de la app (contrato en `README.md`). Una contraseña puesta así obliga a elegir otra al entrar.
+  Contraseñas de 16 caracteres como mínimo y con fortaleza máxima de zxcvbn, sin palabras de la clínica ni
+  de la cuenta (`app/src/auth/strength.ts`); Argon2id de 64 MiB; sesión de 30 minutos sin uso y 8 horas
+  como máximo, con cookie `SameSite=Strict`; aviso por correo de cada inicio de sesión, del bloqueo por
+  intentos fallidos y de cada cambio de contraseña.
+  Límite de peticiones por IP real en memoria (`app/src/http/rate-limit.ts`, `@fastify/rate-limit`): 1200 por
+  minuto en toda la API y 300 en `/login` y `/password`; por encima, 429 `rate_limited` con `Retry-After`. Los
+  fallos de contraseña los cuenta además `auth/attempts.ts` en PostgreSQL (20 por IP y 5 por cuenta en 15 minutos).
 
 - **Reserva directa**: `BookingLink` (Button de shadcn con `asChild`) usa enlaces nativos a WhatsApp desde
   `web/src/lib/booking.js`, sin exigir el formulario ni depender de JavaScript. Nunca mostrar una reserva

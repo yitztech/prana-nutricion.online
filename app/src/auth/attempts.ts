@@ -2,11 +2,10 @@
 import type { Db } from "../db.ts";
 import { HttpProblem } from "../http/problem.ts";
 
-type Kind = "login" | "password_reset";
+type Kind = "login";
 
 export const attemptLimits: Record<Kind, { windowMinutes: number; perIp: number; perSubject: number }> = {
   login: { windowMinutes: 15, perIp: 20, perSubject: 5 },
-  password_reset: { windowMinutes: 60, perIp: 5, perSubject: 3 },
 };
 
 export async function checkAttempts(db: Db, kind: Kind, ip: string, subject: string) {
@@ -27,8 +26,15 @@ export async function checkAttempts(db: Db, kind: Kind, ip: string, subject: str
   }
 }
 
+/** Registra un intento fallido y dice si con él la cuenta queda bloqueada (para avisar a su dueño). */
 export async function recordAttempt(db: Db, kind: Kind, ip: string, subject: string) {
-  await db.query("INSERT INTO auth_attempts (kind, ip, subject) VALUES ($1, $2, $3)", [kind, ip, subject]);
+  const { rows: [row] } = await db.query<{ count: number }>(
+    `WITH inserted AS (INSERT INTO auth_attempts (kind, ip, subject) VALUES ($1, $2, $3) RETURNING 1)
+     SELECT count(*)::int + 1 AS count FROM auth_attempts
+      WHERE kind = $1 AND subject = $3 AND attempted_at > now() - make_interval(mins => $4)`,
+    [kind, ip, subject, attemptLimits[kind].windowMinutes],
+  );
+  return { locked: row.count === attemptLimits[kind].perSubject };
 }
 
 export async function clearAttempts(db: Db, kind: Kind, subject: string) {

@@ -1,10 +1,10 @@
 // Pasos de features/editor/: el panel del editor en su dominio (adminURL), contra el compose de pruebas.
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { expect } from "@playwright/test";
 import sharp from "sharp";
 import { Given, When, Then } from "./fixtures.js";
 import { adminURL, baseURL, teclado } from "../support/entorno.js";
-import { correoPara, esperarSitio, liberarRecuperacion, nuevaCuenta } from "../support/editor.js";
+import { esperarSitio, limpiarIntentos, nuevaCuenta } from "../support/editor.js";
 
 const editor = (ruta) => new URL(ruta, adminURL).href;
 const sitio = (ruta) => new URL(ruta, baseURL).href;
@@ -35,6 +35,8 @@ When("entro al editor", async ({ page, ctx }) => {
 
 When("entro al editor con una contraseña equivocada", async ({ page, ctx }) => {
   await entrar(page, { ...ctx.cuenta, password: "no-es-la-contraseña" });
+  await expect(page.getByRole("alert")).toBeVisible();
+  await limpiarIntentos(ctx.cuenta.email);
 });
 
 Then("veo la pantalla para entrar", async ({ page }) => {
@@ -63,27 +65,40 @@ Then("el campo {string} avisa {string}", async ({ page }, campo, texto) => {
   await expect(control).toHaveAccessibleDescription(new RegExp(texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
-When("pido un enlace para restablecer mi contraseña", async ({ page, ctx }) => {
-  await liberarRecuperacion();
-  await page.goto(editor("/entrar"));
-  await page.getByRole("link", { name: "¿Olvidaste tu contraseña?" }).click();
-  await escribir(page.getByLabel("Correo"), ctx.cuenta.email);
-  await page.getByRole("button", { name: "Enviar el enlace" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "te enviamos un enlace" })).toBeVisible();
+Given("que tengo una cuenta del editor con una contraseña provisional", async ({ ctx }) => {
+  ctx.cuenta = await nuevaCuenta("Ana Prueba", { provisional: true });
 });
 
-When("abro el enlace del correo y elijo una contraseña nueva", async ({ page, ctx }) => {
-  const correo = await correoPara(ctx.cuenta.email, /Restablece/);
-  const enlace = correo.Text.match(/https?:\/\/\S+\/restablecer#token=[\w-]{43}/)?.[0];
-  expect(enlace, "el correo lleva el enlace al dominio del editor").toBeTruthy();
-  // El correo enlaza al ADMIN_URL de la app; en local es el mismo destino que adminURL.
-  await page.goto(editor(new URL(enlace).pathname + new URL(enlace).hash));
-  ctx.nueva = `nueva clave ${randomUUID().slice(0, 8)}`;
-  await escribir(page.getByLabel("Contraseña nueva", { exact: true }), ctx.nueva);
-  await escribir(page.getByLabel("Repite la contraseña", { exact: true }), ctx.nueva);
-  await page.getByRole("button", { name: "Guardar la contraseña" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "tu contraseña cambió" })).toBeVisible();
-  await expect(page).not.toHaveURL(/token=/);
+Then("no hay forma de recuperar la contraseña desde el panel", async ({ page }) => {
+  await expect(page.getByRole("heading", { level: 1, name: "Editor del sitio" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /olvid|recuper|restablec/i })).toHaveCount(0);
+  // Las rutas antiguas tampoco existen: llevan a la entrada.
+  await page.goto(editor("/recuperar"));
+  await expect(page).toHaveURL(/\/entrar$/);
+});
+
+Then("el editor solo me deja cambiar la contraseña", async ({ page }) => {
+  await expect(page).toHaveURL(/\/cuenta$/);
+  await expect(page.getByRole("status").filter({ hasText: "cambia la contraseña que te dieron" })).toBeVisible();
+  const secciones = page.getByRole("navigation", { name: "Secciones del editor" }).getByRole("link");
+  await expect(secciones).toHaveText(["Tu cuenta"]);
+  await page.goto(editor("/tratamientos"));
+  await expect(page).toHaveURL(/\/cuenta$/);
+});
+
+Then("puedo ir a todas las secciones del editor", async ({ page }) => {
+  const nav = page.getByRole("navigation", { name: "Secciones del editor" });
+  await expect(nav.getByRole("link", { name: "Tratamientos" })).toBeVisible();
+  await nav.getByRole("link", { name: "Inicio" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: /Hola/ })).toBeVisible();
+});
+
+When("intento cambiar mi contraseña por {string}", async ({ page, ctx }, nueva) => {
+  await page.getByRole("link", { name: "Tu cuenta" }).click();
+  await escribir(page.getByLabel("Contraseña actual", { exact: true }), ctx.cuenta.password);
+  await escribir(page.getByLabel("Contraseña nueva", { exact: true }), nueva);
+  await escribir(page.getByLabel("Repite la contraseña nueva", { exact: true }), nueva);
+  await page.getByRole("button", { name: "Cambiar la contraseña" }).click();
 });
 
 Then("puedo entrar con la contraseña nueva", async ({ page, ctx }) => {
@@ -93,7 +108,7 @@ Then("puedo entrar con la contraseña nueva", async ({ page, ctx }) => {
 
 When("cambio mi contraseña", async ({ page, ctx }) => {
   await page.getByRole("link", { name: "Tu cuenta" }).click();
-  ctx.nueva = `nueva clave ${randomUUID().slice(0, 8)}`;
+  ctx.nueva = `girasol tejado ${randomBytes(9).toString("base64url")}`;
   await escribir(page.getByLabel("Contraseña actual", { exact: true }), ctx.cuenta.password);
   await escribir(page.getByLabel("Contraseña nueva", { exact: true }), ctx.nueva);
   await escribir(page.getByLabel("Repite la contraseña nueva", { exact: true }), ctx.nueva);

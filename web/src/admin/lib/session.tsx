@@ -2,13 +2,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, setUnauthenticatedHandler } from "./api";
 
-export type User = { id: string; email: string; name: string };
+/** mustChangePassword: la contraseña la puso la plataforma (la inicial o una restablecida). */
+export type User = { id: string; email: string; name: string; mustChangePassword: boolean };
 type State = { status: "loading" } | { status: "anonymous"; expired: boolean } | { status: "signed-in"; user: User };
 
 type Session = {
   state: State;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  passwordChanged: () => void;
 };
 
 const SessionContext = createContext<Session | null>(null);
@@ -43,7 +45,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const value = useMemo(() => ({ state, signIn, signOut }), [state, signIn, signOut]);
+  const passwordChanged = useCallback(() => {
+    setState((current) => current.status === "signed-in" ? { status: "signed-in", user: { ...current.user, mustChangePassword: false } } : current);
+  }, []);
+
+  const value = useMemo(() => ({ state, signIn, signOut, passwordChanged }), [state, signIn, signOut, passwordChanged]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

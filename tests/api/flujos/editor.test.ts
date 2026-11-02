@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, describe, test } from "node:test";
-import { ADMIN, cerrar, conSesion, correoPara, documento, limpiarIntentos, nuevaCuenta, Cliente } from "../support/cliente.ts";
+import { ADMIN, cerrar, conSesion, correoPara, documento, nuevaCuenta, Cliente } from "../support/cliente.ts";
 import { categoria, esperarAusencia, esperarPagina, formulario, foto, promocion } from "../support/contenido.ts";
 
 after(cerrar);
@@ -20,28 +20,12 @@ describe("sesión", () => {
     assert.equal((await viejo.get("/api/auth/session")).status, 401);
   });
 
-  test("restablecer la contraseña por correo cierra las sesiones abiertas y avisa", async () => {
+  test("al entrar llega un aviso al correo de la cuenta, con el dominio del editor", async () => {
     const cuenta = await nuevaCuenta();
-    const { cliente: abierta } = await conSesion(cuenta);
-    const anonimo = new Cliente();
-    assert.equal((await anonimo.post("/api/auth/password-reset", { email: cuenta.email })).status, 202);
-    const correo = await correoPara(cuenta.email, /Restablece/);
-    const token = /#token=([A-Za-z0-9_-]{43})/.exec(correo.Text)?.[1];
-    assert.ok(token, "el enlace lleva el token en el fragmento");
-    // El enlace lleva al dominio del editor, nunca al sitio público.
-    assert.ok(correo.Text.includes(`${ADMIN}/restablecer#token=${token}`), correo.Text);
-    const nueva = "una contraseña nueva y larga";
-    assert.equal((await anonimo.post("/api/auth/password-reset/confirm", { token, password: nueva })).status, 204);
-    assert.equal((await abierta.get("/api/auth/session")).status, 401, "la sesión anterior se cerró");
-    // El enlace no sirve dos veces.
-    const repetido = await anonimo.post("/api/auth/password-reset/confirm", { token, password: nueva });
-    assert.equal(repetido.status, 422);
-    assert.equal(repetido.body.errors[0].field, "token");
-    await conSesion({ ...cuenta, password: nueva });
-    const aviso = await correoPara(cuenta.email, /cambió/);
-    assert.ok(aviso.Text.includes(`${ADMIN}/`), "el aviso apunta al editor");
+    await conSesion(cuenta);
+    const aviso = await correoPara(cuenta.email, /Nuevo inicio de sesión/);
+    assert.ok(aviso.Text.includes(`${ADMIN}/`), aviso.Text);
     assert.doesNotMatch(aviso.Text, /\/admin\//);
-    await limpiarIntentos(cuenta.email);
   });
 
   test("cambiar la contraseña mantiene esta sesión y cierra las demás", async () => {

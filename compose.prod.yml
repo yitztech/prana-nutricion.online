@@ -66,14 +66,16 @@ services:
     networks: [frontend]
 
   # API del editor (/api/), generación del sitio y cola de correos. Entra a PostgreSQL con su
-  # propio rol, sin superusuario (AGENTS.md §26).
+  # propio rol, sin superusuario (AGENTS.md §26). 384 MB: Argon2id de 64 MiB y los diccionarios de
+  # contraseñas (unos 50 MB) en el servicio y, a la vez, en la orden de Ansible (admin:asegurar), que corre
+  # con docker exec dentro de este mismo contenedor y comparte su límite.
   app:
     <<: *hardening
     image: ${IMAGE_PREFIX:?Define IMAGE_PREFIX}-app:${IMAGE_TAG:-main}
-    mem_limit: 256m
+    mem_limit: 384m
     cpus: 0.5
     environment:
-      NODE_OPTIONS: --max-old-space-size=192
+      NODE_OPTIONS: --max-old-space-size=288
       POSTGRES_HOST: postgres
       POSTGRES_DB: prana
       APP_DB_USER: prana_app

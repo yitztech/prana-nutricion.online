@@ -81,9 +81,13 @@ const uuidParam = (value: string) => {
 export const adminRoutes = (deps: Deps) => async (app: FastifyInstance) => {
   const { pool, publisher, config } = deps;
   app.addHook("preHandler", sessionLoader(deps));
-  // Se deniega por defecto: todo lo que cuelga de /api/admin exige sesión (§25).
+  // Se deniega por defecto: todo lo que cuelga de /api/admin exige sesión (§25). Con una contraseña que
+  // conoce alguien más (la inicial o una restablecida), solo se puede cambiarla (/api/auth/password).
   app.addHook("preHandler", async (request, reply) => {
     if (requireUser(request, reply)) return reply;
+    if (request.user!.mustChangePassword) {
+      throw new HttpProblem(403, "password_change_required", "Elige una contraseña nueva antes de continuar.");
+    }
   });
 
   const publish = (request: FastifyRequest, reason: string) => publisher.request(reason, request.user!.id);

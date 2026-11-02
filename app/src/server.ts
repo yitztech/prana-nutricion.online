@@ -7,6 +7,7 @@ import { access, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
+import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import type pg from "pg";
 import { promotionImage } from "#shared/limits.ts";
@@ -14,6 +15,7 @@ import type { ServiceConfig } from "./config.ts";
 import type { SessionUser } from "./auth/sessions.ts";
 import type { Mailer } from "./jobs/mail.ts";
 import { HttpProblem, sendProblem } from "./http/problem.ts";
+import { clientIp, rateLimitOptions } from "./http/rate-limit.ts";
 import { MIGRATIONS_DIR } from "./migrate.ts";
 import { authRoutes } from "./routes/auth.ts";
 import { adminRoutes } from "./routes/admin.ts";
@@ -59,6 +61,7 @@ export async function buildServer(deps: Deps): Promise<FastifyInstance> {
   const origins = new Set([config.ADMIN_URL, ...(config.extraOrigins ?? [])]);
 
   await app.register(cookie);
+  await app.register(rateLimit, rateLimitOptions);
   await app.register(multipart, {
     limits: { fileSize: promotionImage.maxBytes, files: 1, fields: 0, parts: 1, headerPairs: 100 },
     throwFileSizeLimit: true,
@@ -70,9 +73,7 @@ export async function buildServer(deps: Deps): Promise<FastifyInstance> {
 
   app.addHook("onRequest", async (request) => {
     request.startedAt = performance.now();
-    // La IP del cliente es la que pone el gateway, nunca la de la conexión (§20).
-    const real = request.headers["x-real-ip"];
-    request.realIp = typeof real === "string" && /^[0-9a-fA-F.:]{2,45}$/.test(real) ? real : request.ip;
+    request.realIp = clientIp(request);
   });
 
   // Protección CSRF (§24): toda escritura llega del dominio del editor y con su cabecera.

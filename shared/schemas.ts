@@ -239,11 +239,6 @@ export const newPassword = z
   .refine((value) => charLength(value) <= passwordPolicy.maxLength, issue(fieldCodes.tooLong, `Máximo ${passwordPolicy.maxLength} caracteres.`));
 
 export const loginSchema = z.strictObject({ email, password: anyPassword });
-export const passwordResetRequestSchema = z.strictObject({ email });
-export const passwordResetSchema = z.strictObject({
-  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/, issue(fieldCodes.invalidFormat, "El enlace no es válido o ha caducado.")),
-  password: newPassword,
-});
 export const passwordChangeSchema = z.strictObject({ currentPassword: anyPassword, newPassword });
 
 export const adminNameSchema = z

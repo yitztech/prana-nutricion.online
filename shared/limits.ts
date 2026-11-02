@@ -46,7 +46,12 @@ export const ranges = {
   percent: { min: 1, max: 100 },
 } as const;
 
-export const passwordPolicy = { minLength: 12, maxLength: limits.admin.password, maxBytes: 128 } as const;
+/**
+ * Contraseñas del editor (cuentas de administración): 16 caracteres como mínimo, por encima de los 15 que
+ * NIST SP 800-63B exige sin segundo factor. La fortaleza (contraseñas comunes, filtradas o deducibles de la
+ * cuenta) la comprueba además el servidor: app/src/auth/strength.ts.
+ */
+export const passwordPolicy = { minLength: 16, maxLength: limits.admin.password, maxBytes: 128 } as const;
 
 /**
  * Imágenes de las promociones: el mismo formato que las fotos actuales del sitio (3:2 horizontal,

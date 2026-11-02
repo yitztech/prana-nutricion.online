@@ -151,7 +151,7 @@ describe("secretos", () => {
     // Formato PHC: el orden de los parámetros depende de la versión de la librería
     const [, algorithm, version, params] = row.password_hash.split("$");
     assert.deepEqual([algorithm, version], ["argon2id", "v=19"]);
-    assert.deepEqual(Object.fromEntries(params.split(",").map((p: string) => p.split("="))), { m: "19456", t: "2", p: "1" });
+    assert.deepEqual(Object.fromEntries(params.split(",").map((p: string) => p.split("="))), { m: "65536", t: "3", p: "1" });
   });
 
   test("sesiones y enlaces de restablecimiento guardan el hash (32 bytes), nunca el token", async () => {

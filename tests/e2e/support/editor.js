@@ -8,30 +8,29 @@ import { pgURL } from "./entorno.js";
 const mailpit = process.env.E2E_MAILPIT_URL ?? `http://127.0.0.1:${process.env.E2E_MAILPIT_PUERTO ?? "8025"}`;
 
 /** Los mismos parámetros que app/src/auth/passwords.ts. */
-const hash = (password) => argon2.hash(password, { type: argon2.argon2id, memoryCost: 19_456, timeCost: 2, parallelism: 1 });
+const hash = (password) => argon2.hash(password, { type: argon2.argon2id, memoryCost: 65_536, timeCost: 3, parallelism: 1 });
 
-export async function nuevaCuenta(nombre = "Persona de prueba") {
+/** provisional: como la crea la plataforma (admin:asegurar), que obliga a cambiar la contraseña al entrar. */
+export async function nuevaCuenta(nombre = "Persona de prueba", { provisional = false } = {}) {
   const email = `e2e-${randomUUID()}@ejemplo.mx`;
   const password = `clave-${randomBytes(9).toString("base64url")}`;
   const db = new pg.Client({ connectionString: pgURL, options: "-c search_path=prana" });
   await db.connect();
   try {
-    await db.query("INSERT INTO admin_users (email, name, password_hash) VALUES ($1, $2, $3)", [email, nombre, await hash(password)]);
+    await db.query("INSERT INTO admin_users (email, name, password_hash, must_change_password) VALUES ($1, $2, $3, $4)",
+      [email, nombre, await hash(password), provisional]);
   } finally {
     await db.end();
   }
   return { email, password, nombre };
 }
 
-/**
- * Borra los intentos de recuperación de contraseña de la base de pruebas. El límite por IP (5 por hora) lo
- * comprueba test:security; aquí todos los navegadores comparten la IP de la máquina y lo agotarían.
- */
-export async function liberarRecuperacion() {
+/** Los intentos fallidos de un escenario no deben bloquear a los siguientes (límite por IP). */
+export async function limpiarIntentos(email) {
   const db = new pg.Client({ connectionString: pgURL, options: "-c search_path=prana" });
   await db.connect();
   try {
-    await db.query("DELETE FROM auth_attempts WHERE kind = 'password_reset'");
+    await db.query("DELETE FROM auth_attempts WHERE subject = $1", [email]);
   } finally {
     await db.end();
   }
