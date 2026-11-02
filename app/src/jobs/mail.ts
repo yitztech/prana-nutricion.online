@@ -94,7 +94,7 @@ export const mails = {
     text: [
       "Hola:",
       "",
-      `Hubo varios intentos fallidos de entrar con tu cuenta del editor del sitio de Praná: Nutrición y Bienestar. Por seguridad, el acceso queda bloqueado ${minutes} minutos.`,
+      `Hubo varios intentos fallidos de entrar con tu cuenta del editor del sitio de Praná: Nutrición y Bienestar. Por seguridad, durante ${minutes} minutos rechazamos los intentos desde donde fallaron.`,
       "",
       "Si fuiste tú, espera y vuelve a probar. Si no, tu contraseña sigue a salvo mientras nadie la conozca; aun así, avisa a quien administra el sitio.",
     ].join("\n"),

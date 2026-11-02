@@ -74,6 +74,33 @@ Then("la política de contenido solo permite scripts del propio dominio y de la 
   for (const origen of scripts) expect(origen).toMatch(/^('self'|https:\/\/stats\.yunitztech\.com)$/);
 });
 
+Then("la política de contenido no admite estilos en línea ni imágenes de otros dominios", async ({ ctx }) => {
+  const csp = ctx.respuesta.headers()["content-security-policy"];
+  expect(csp).toMatch(/style-src 'self';/);
+  expect(csp).toMatch(/img-src 'self' data:;/);
+  expect(csp).not.toMatch(/unsafe-inline|unsafe-eval/);
+});
+
+// WebKit avisa de un style-src-attr al pintar su propio menú de <select> (sin archivo de origen): no viene de la
+// página ni cambia cómo se ve (comprobado con capturas). Solo ese caso se descarta; cualquier otro cuenta.
+const delNavegador = (v) => v.directiva === "style-src-attr" && !v.origen && v.etiqueta === "SELECT";
+
+/** Registra desde el principio de la carga las infracciones de la CSP (el aviso llega antes de que termine). */
+async function vigilarCsp(page) {
+  await page.addInitScript(() => {
+    window.__cspInfracciones = [];
+    document.addEventListener("securitypolicyviolation", (e) => window.__cspInfracciones.push({
+      directiva: e.violatedDirective, bloqueado: e.blockedURI, origen: e.sourceFile, etiqueta: e.target?.tagName ?? null }));
+  });
+}
+const infraccionesCsp = (page) => page.evaluate(() => window.__cspInfracciones ?? []);
+
+Then("la página no infringe su política de contenido", async ({ page }) => {
+  await vigilarCsp(page);
+  await page.reload({ waitUntil: "networkidle" });
+  expect((await infraccionesCsp(page)).filter((v) => !delNavegador(v))).toEqual([]);
+});
+
 Then("la página no carga nada de otros dominios salvo la analítica", async ({ page }) => {
   const externos = [];
   page.on("request", (r) => {
@@ -89,8 +116,12 @@ Then("la consola no muestra errores", async ({ page, ctx }) => {
   ctx.errores ??= [];
   page.on("console", (m) => m.type() === "error" && ctx.errores.push(m.text()));
   page.on("pageerror", (e) => ctx.errores.push(e.message));
+  await vigilarCsp(page);
   await page.reload({ waitUntil: "networkidle" });
-  expect(ctx.errores).toEqual([]);
+  // Por cada aviso del propio WebKit (ver delNavegador) se descarta un mensaje de CSP de la consola, no más.
+  let delNavegadorPendientes = (await infraccionesCsp(page)).filter(delNavegador).length;
+  const errores = ctx.errores.filter((texto) => !(/^Refused to apply a stylesheet/.test(texto) && delNavegadorPendientes-- > 0));
+  expect(errores).toEqual([]);
 });
 
 Then("todas las imágenes cargan y tienen texto alternativo", async ({ page }) => {

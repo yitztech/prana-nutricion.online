@@ -57,6 +57,11 @@ test("los textos legales iniciales son válidos y los enlaces peligrosos no", ()
   assert.equal(richDocSchema.safeParse(html).success, false);
   assert.equal(isSafeHref("//evil.example"), false);
   assert.equal(isSafeHref("/privacidad"), true);
+  assert.equal(isSafeHref("#contacto"), true);
+  assert.equal(isSafeHref("tel:+52 777 209 5094"), true);
+  for (const otroSitio of ["/\\evil.example", "/\t/evil.example", "/\n/evil.example", "https://a.mx\\@evil.example", "/ruta con espacios"]) {
+    assert.equal(isSafeHref(otroSitio), false, JSON.stringify(otroSitio));
+  }
 });
 
 test("descarta atributos de presentación del editor", () => {

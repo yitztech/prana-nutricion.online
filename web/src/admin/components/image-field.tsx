@@ -15,7 +15,7 @@ import { api, errorMessage } from "../lib/api";
 
 export type ImageValue = { image: { uploadId: string } | { path: string } | null; url: string | null };
 
-const help = `JPG, PNG o WebP de hasta ${promotionImage.maxBytes / 1024 / 1024} MB, horizontal 3:2 y de al menos ${promotionImage.minWidth} × ${promotionImage.minHeight} px.`;
+const help = `JPG, PNG o WebP de hasta ${promotionImage.maxBytes / 1024 / 1024} MB, horizontal 3:2, de al menos ${promotionImage.minWidth} × ${promotionImage.minHeight} px y de hasta ${promotionImage.maxPixels / 1_000_000} megapíxeles.`;
 
 export function ImageField({ value, onChange, error, sitePhotos }: {
   value: ImageValue;

@@ -65,6 +65,8 @@ export const promotionImage = {
   minHeight: 1024,
   aspect: { width: 3, height: 2 },
   widths: [640, 1024, 1536],
+  /** Píxeles como máximo (unos 6100 × 4100): una imagen mayor ocupa demasiada memoria al decodificarla. */
+  maxPixels: 25_000_000,
 } as const;
 
 /** Cuenta caracteres Unicode, no unidades UTF-16 (§6.3). */
