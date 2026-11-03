@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { loginSchema, passwordChangeSchema } from "#shared/schemas.ts";
-import { attemptLimits, checkAttempts, clearAttempts, recordAttempt } from "../auth/attempts.ts";
+import { attemptLimits, checkAttempts, clearAttempts, recordAttempt, shouldNotifyLock } from "../auth/attempts.ts";
 import { decoyHash, hashPassword, needsRehash, verifyPassword } from "../auth/passwords.ts";
 import { isStrongPassword, WEAK_PASSWORD_MESSAGE } from "../auth/strength.ts";
 import { ABSOLUTE_HOURS, cookieName, createSession, deleteSession, deleteUserSessions, findSession } from "../auth/sessions.ts";
@@ -46,13 +46,13 @@ export const authRoutes = (deps: Deps) => async (app: FastifyInstance) => {
     if (!user || !valid) {
       const { locked } = await recordAttempt(pool, "login", request.realIp, input.email);
       // El aviso de bloqueo va al dueño de la cuenta, nunca a quien intenta entrar.
-      if (locked && user) {
+      if (locked && user && (await shouldNotifyLock(pool, user.id))) {
         await mailer.send(mails.accountLocked(user.email, attemptLimits.login.windowMinutes));
         await audit(pool, user.id, "login_locked", "admin_user", user.id);
       }
       throw new HttpProblem(401, "invalid_credentials", "El correo o la contraseña no son correctos.");
     }
-    await clearAttempts(pool, "login", input.email);
+    await clearAttempts(pool, "login", request.realIp, input.email);
     if (needsRehash(user.password_hash)) {
       await pool.query("UPDATE admin_users SET password_hash = $2, updated_at = now() WHERE id = $1", [user.id, await hashPassword(input.password)]);
     }
@@ -89,7 +89,7 @@ export const authRoutes = (deps: Deps) => async (app: FastifyInstance) => {
       await recordAttempt(pool, "login", request.realIp, user.email);
       throw validationFailed([{ field: "currentPassword", code: "invalid_credentials", message: "La contraseña actual no es correcta." }]);
     }
-    await clearAttempts(pool, "login", user.email);
+    await clearAttempts(pool, "login", request.realIp, user.email);
     if (input.newPassword === input.currentPassword) {
       throw validationFailed([{ field: "newPassword", code: "password_reused", message: "Elige una contraseña distinta de la actual." }]);
     }

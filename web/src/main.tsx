@@ -1,3 +1,5 @@
+// Primero: prepara la CSP (nonce de estilos y zod sin eval) antes de que se ejecute ninguna librería.
+import "@/lib/csp";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { Root } from "@/Root";
 import "@/styles/index.css";

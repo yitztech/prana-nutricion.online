@@ -1,4 +1,5 @@
 import argon2 from "argon2";
+import { createLimiter } from "../concurrency.ts";
 
 /**
  * Argon2id por encima del mínimo de OWASP, porque son cuentas de administración: 64 MiB, 3 iteraciones
@@ -8,22 +9,7 @@ import argon2 from "argon2";
  */
 export const hashOptions = { type: argon2.argon2id, memoryCost: 65_536, timeCost: 3, parallelism: 1 } as const;
 
-const MAX_CONCURRENT = 1;
-let running = 0;
-const waiting: (() => void)[] = [];
-
-/** El turno pasa directamente al siguiente en espera: nunca hay más de MAX_CONCURRENT a la vez. */
-async function limited<T>(work: () => Promise<T>): Promise<T> {
-  if (running >= MAX_CONCURRENT) await new Promise<void>((resolve) => waiting.push(resolve));
-  else running++;
-  try {
-    return await work();
-  } finally {
-    const next = waiting.shift();
-    if (next) next();
-    else running--;
-  }
-}
+const limited = createLimiter(1);
 
 export const hashPassword = (password: string) => limited(() => argon2.hash(password, hashOptions));
 

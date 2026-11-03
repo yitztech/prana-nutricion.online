@@ -179,6 +179,12 @@ describe("imágenes (§29)", () => {
     assert.match(r.body.errors[0].message, /1200 × 800/);
   });
 
+  test("demasiados píxeles: 422 antes de decodificarla, con las medidas", async () => {
+    const r = await cliente.pedir("POST", "/api/admin/uploads", { form: formulario(await foto(6000, 5000, "png"), "enorme.png", "image/png") });
+    campo(r, "file", "too_large");
+    assert.match(r.body.errors[0].message, /6000 × 5000/);
+  });
+
   test("el tipo se comprueba por el contenido, no por el nombre ni el Content-Type", async () => {
     const texto = Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>");
     campo(await cliente.pedir("POST", "/api/admin/uploads", { form: formulario(texto, "foto.jpg", "image/jpeg") }), "file", "invalid_type");

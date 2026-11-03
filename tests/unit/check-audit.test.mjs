@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { comprobarAuditoria, evaluarAuditoria } from "../../scripts/check-audit.mjs";
+import { comprobarAuditoria, entornoAuditoria, evaluarAuditoria } from "../../scripts/check-audit.mjs";
 
 const conocido = "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm";
 const nuevo = "https://github.com/advisories/GHSA-nuevo";
@@ -91,4 +91,9 @@ test("solo el código 1 con informe completo puede representar vulnerabilidades"
     { code: "ENOENT" },
     { code: "ETIMEDOUT", signal: "SIGTERM" },
   ]) assert.throws(() => comprobarAuditoria(() => { throw Object.assign(new Error(), detalles); }));
+});
+
+test("npm audit no hereda allow-scripts del ~/.npmrc a través de npm run (EALLOWSCRIPTS)", () => {
+  const entorno = entornoAuditoria({ PATH: "/bin", npm_config_allow_scripts: "[\"ngrok\"]", NPM_CONFIG_ALLOW_SCRIPTS: "x", npm_config_cache: "/c" });
+  assert.deepEqual(entorno, { PATH: "/bin", npm_config_cache: "/c" });
 });

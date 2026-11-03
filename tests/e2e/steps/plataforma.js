@@ -2,7 +2,7 @@
 // Comunes a todos los proyectos de la plataforma.
 import { expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { Given, When, Then } from "./fixtures.js";
+import { delNavegador, Given, When, Then } from "./fixtures.js";
 import { baseURL } from "../support/entorno.js";
 
 // ── Salud y versión ──────────────────────────────────────────────
@@ -74,6 +74,18 @@ Then("la política de contenido solo permite scripts del propio dominio y de la 
   for (const origen of scripts) expect(origen).toMatch(/^('self'|https:\/\/stats\.yunitztech\.com)$/);
 });
 
+Then("la política de contenido no admite estilos en línea ni imágenes de otros dominios", async ({ ctx }) => {
+  const csp = ctx.respuesta.headers()["content-security-policy"];
+  expect(csp).toMatch(/style-src 'self' 'nonce-[0-9a-f]{32}';/);
+  expect(csp).toMatch(/img-src 'self' data:;/);
+  expect(csp).not.toMatch(/unsafe-inline|unsafe-eval/);
+});
+
+Then("la página no infringe su política de contenido", async ({ page, cspInfracciones }) => {
+  await page.reload({ waitUntil: "networkidle" });
+  expect(cspInfracciones.filter((v) => !delNavegador(v))).toEqual([]);
+});
+
 Then("la página no carga nada de otros dominios salvo la analítica", async ({ page }) => {
   const externos = [];
   page.on("request", (r) => {
@@ -85,21 +97,29 @@ Then("la página no carga nada de otros dominios salvo la analítica", async ({ 
   expect(externos).toEqual([]);
 });
 
-Then("la consola no muestra errores", async ({ page, ctx }) => {
+Then("la consola no muestra errores", async ({ page, ctx, cspInfracciones }) => {
   ctx.errores ??= [];
   page.on("console", (m) => m.type() === "error" && ctx.errores.push(m.text()));
   page.on("pageerror", (e) => ctx.errores.push(e.message));
+  const antes = cspInfracciones.length;
   await page.reload({ waitUntil: "networkidle" });
-  expect(ctx.errores).toEqual([]);
+  // Por cada aviso del propio WebKit (ver delNavegador) se descarta un mensaje de CSP de la consola, no más.
+  let delNavegadorPendientes = cspInfracciones.slice(antes).filter(delNavegador).length;
+  const errores = ctx.errores.filter((texto) => !(/^Refused to apply a stylesheet/.test(texto) && delNavegadorPendientes-- > 0));
+  expect(errores).toEqual([]);
 });
 
 Then("todas las imágenes cargan y tienen texto alternativo", async ({ page }) => {
   // Las fotos se describen; los iconos que acompañan a un texto y los fondos llevan alt="" (decorativos).
-  for (const img of await page.locator("img:visible").all()) {
+  const imagenes = await page.locator("img:visible").all();
+  // Se recorren todas (las diferidas empiezan a cargar al acercarse) y después se espera a que terminen juntas:
+  // una espera por imagen, en serie, no cabe en el tiempo del escenario con la máquina cargada.
+  for (const img of imagenes) {
     await img.scrollIntoViewIfNeeded();
     await expect(img).toHaveAttribute("alt");
-    await expect.poll(() => img.evaluate((el) => el.complete && el.naturalWidth > 0)).toBe(true);
   }
+  await expect.poll(() => page.locator("img:visible").evaluateAll((todas) => todas.filter((el) => !(el.complete && el.naturalWidth > 0)).map((el) => el.currentSrc || el.src)),
+    { timeout: 20_000 }).toEqual([]);
   for (const foto of await page.locator('img[data-slot="photo"]:not([alt=""])').all()) {
     await expect(foto).toHaveAttribute("alt", /\S{3,}/);
   }

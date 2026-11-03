@@ -35,9 +35,8 @@ rm -f "$snippet"
 if [ -n "$script_url" ]; then
   origin=https://stats.yunitztech.com
   cat > "$snippet" <<CONF
-# Generado por 16-analytics.sh: script de Umami en las páginas HTML
-proxy_set_header Accept-Encoding "";
-sub_filter_once on;
+# Generado por 16-analytics.sh: script de Umami en las páginas HTML. El cuerpo sin comprimir y
+# sub_filter_once (por defecto) los pone csp-nonce.conf, incluido en la misma location.
 sub_filter '</head>' '<script defer src="${script_url}" data-website-id="${website_id}"></script></head>';
 CONF
 fi

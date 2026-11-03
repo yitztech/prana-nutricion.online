@@ -9,6 +9,8 @@ Característica: Cabeceras de seguridad y recursos propios
     Cuando abro la página "<ruta>"
     Entonces la página lleva las cabeceras de seguridad
     Y la política de contenido solo permite scripts del propio dominio y de la analítica
+    Y la política de contenido no admite estilos en línea ni imágenes de otros dominios
+    Y la página no infringe su política de contenido
 
     Ejemplos:
       | ruta         |

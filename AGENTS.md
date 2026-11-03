@@ -1004,7 +1004,15 @@ Lo específico de este repositorio: comandos de verificación, convenciones prop
   intentos fallidos y de cada cambio de contraseña.
   Límite de peticiones por IP real en memoria (`app/src/http/rate-limit.ts`, `@fastify/rate-limit`): 1200 por
   minuto en toda la API y 300 en `/login` y `/password`; por encima, 429 `rate_limited` con `Retry-After`. Los
-  fallos de contraseña los cuenta además `auth/attempts.ts` en PostgreSQL (20 por IP y 5 por cuenta en 15 minutos).
+  fallos de contraseña los cuenta además `auth/attempts.ts` en PostgreSQL, en 15 minutos: 20 por IP, 5 por cuenta
+  desde una misma IP (bloquea esa IP, no a la dueña de la cuenta en otra red) y 50 por cuenta entre todas las IPs
+  (ataque repartido). Un aviso de bloqueo por cuenta y hora como máximo.
+  Imágenes subidas: de hasta 25 megapíxeles, medidas en la cabecera antes de decodificarlas y procesadas de una
+  en una (sharp sin caché y con un hilo), para no superar el `mem_limit` de `app`.
+  CSP sin `'unsafe-inline'` en el sitio ni en el editor: los `<style>` que Radix y Tiptap insertan al ejecutarse
+  llevan un nonce que el gateway pone en cada respuesta HTML (`gateway/snippets/csp-nonce.conf`,
+  `web/src/lib/csp.ts`, que también pone zod sin `eval`); por eso el HTML va sin `ETag`. Los escenarios fallan ante cualquier infracción de
+  la CSP (fixture `cspInfracciones`), salvo el aviso que WebKit da por su propio menú de `<select>`.
 
 - **Reserva directa**: `BookingLink` (Button de shadcn con `asChild`) usa enlaces nativos a WhatsApp desde
   `web/src/lib/booking.js`, sin exigir el formulario ni depender de JavaScript. Nunca mostrar una reserva

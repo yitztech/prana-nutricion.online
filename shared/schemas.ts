@@ -71,7 +71,9 @@ export function slugify(value: string) {
 /** Enlaces permitidos: https, http, correo, teléfono o una ruta del propio sitio. Nunca javascript:. */
 export function isSafeHref(href: string) {
   if (charLength(href) > limits.legal.href) return false;
-  if (/^\/(?!\/)/.test(href) || href.startsWith("#")) return true;
+  // El navegador lee «\» como «/» y quita tabuladores y saltos: «/\otro.mx» o «/\t/otro.mx» llevarían a otro sitio.
+  if (/[\\\p{Cc}]/u.test(href)) return false;
+  if (/^\/(?!\/)\S*$/.test(href) || /^#\S*$/.test(href)) return true;
   return /^(https?:\/\/[^\s]+|mailto:[^\s@]+@[^\s@]+|tel:\+?[0-9 ()-]+)$/i.test(href);
 }
 

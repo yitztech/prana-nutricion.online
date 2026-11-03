@@ -137,6 +137,34 @@ describe("inicio de sesión (§24)", () => {
     }
   });
 
+  test("los fallos desde otra IP no dejan fuera a la dueña de la cuenta", async () => {
+    const cuenta = await nuevaCuenta();
+    try {
+      await db().query(
+        "INSERT INTO auth_attempts (kind, ip, subject) SELECT 'login', '203.0.113.7', $1 FROM generate_series(1, 5)", [cuenta.email]);
+      const r = await new Cliente().post("/api/auth/login", { email: cuenta.email, password: cuenta.password });
+      assert.equal(r.status, 200, r.text);
+      const { rows: [{ quedan }] } = await db().query<{ quedan: number }>(
+        "SELECT count(*)::int AS quedan FROM auth_attempts WHERE subject = $1 AND ip = '203.0.113.7'", [cuenta.email]);
+      assert.equal(quedan, 5, "entrar bien no borra los fallos de otras IPs");
+    } finally {
+      await limpiarIntentos(cuenta.email);
+    }
+  });
+
+  test("un ataque repartido entre muchas IPs bloquea la cuenta para todas", async () => {
+    const cuenta = await nuevaCuenta();
+    try {
+      await db().query(
+        "INSERT INTO auth_attempts (kind, ip, subject) SELECT 'login', ('198.51.100.' || n)::inet, $1 FROM generate_series(1, 50) n", [cuenta.email]);
+      const r = await new Cliente().post("/api/auth/login", { email: cuenta.email, password: cuenta.password });
+      assert.equal(r.status, 429);
+      assert.ok(Number(r.headers.get("retry-after")) > 0);
+    } finally {
+      await limpiarIntentos(cuenta.email);
+    }
+  });
+
   test("cambiar la contraseña con una sesión también limita los intentos de la contraseña actual", async () => {
     const cuenta = await nuevaCuenta();
     try {
@@ -218,6 +246,25 @@ describe("respuestas", () => {
     const api = await fetch(new URL("/api/health", BASE));
     assert.equal(api.headers.get("cache-control"), "no-store");
     assert.ok(api.headers.get("x-request-id"));
+  });
+
+  test("los estilos que insertan las librerías llevan un nonce nuevo en cada respuesta, sin 'unsafe-inline'", async () => {
+    for (const url of [new URL("/", BASE), new URL("/privacidad", BASE), new URL("/admin", BASE), new URL("/", ADMIN), new URL("/promociones", ADMIN)]) {
+      const nonces = new Set<string>();
+      for (let i = 0; i < 2; i++) {
+        const r = await fetch(url);
+        const csp = r.headers.get("content-security-policy") ?? "";
+        assert.doesNotMatch(csp, /unsafe-inline|unsafe-eval/, url.href);
+        const nonce = csp.match(/style-src 'self' 'nonce-([0-9a-f]{32})';/)?.[1];
+        assert.ok(nonce, `${url.href}: style-src con nonce`);
+        assert.ok((await r.text()).includes(`<meta name="csp-nonce" content="${nonce}"`), `${url.href}: el HTML lleva el mismo nonce`);
+        assert.equal(r.headers.get("etag"), null, `${url.href}: sin ETag (un 304 mezclaría dos nonces)`);
+        nonces.add(nonce);
+      }
+      assert.equal(nonces.size, 2, `${url.href}: nonce distinto en cada respuesta`);
+    }
+    const css = await fetch(new URL((await (await fetch(new URL("/", BASE))).text()).match(/href="(\/assets\/[^"]+\.css)"/)![1], BASE));
+    assert.ok(css.headers.get("etag") || css.headers.get("last-modified"), "los recursos conservan sus validadores de caché");
   });
 
   test("el editor tiene su propia CSP, sin analítica, y no comparte cabeceras con el sitio", async () => {
