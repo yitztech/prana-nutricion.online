@@ -71,11 +71,20 @@ export function evaluarAuditoria(salida, hoy = new Date().toISOString().slice(0,
   return { aceptados: [...aceptados.values()], fallos: [...fallos] };
 }
 
+/**
+ * Entorno de `npm audit`. `npm run` pasa la configuración del usuario como variables `npm_config_*`, y npm 11
+ * rechaza `allow-scripts` así dentro de un proyecto (EALLOWSCRIPTS), aunque venga del ~/.npmrc global (p. ej.
+ * para instalar una herramienta con `-g`). La auditoría no ejecuta scripts: se quita sin cambiar nada más.
+ */
+export function entornoAuditoria(entorno = process.env) {
+  return Object.fromEntries(Object.entries(entorno).filter(([nombre]) => nombre.toLowerCase() !== "npm_config_allow_scripts"));
+}
+
 export function comprobarAuditoria(ejecutar = execFileSync) {
   let salida;
   try {
     salida = ejecutar("npm", ["audit", "--json"], {
-      encoding: "utf8", maxBuffer: 64 * 1024 * 1024, timeout: 60_000,
+      encoding: "utf8", maxBuffer: 64 * 1024 * 1024, timeout: 60_000, env: entornoAuditoria(),
     });
   } catch (error) {
     // Solo el código 1 puede representar vulnerabilidades; los demás son errores de ejecución.

@@ -3,7 +3,8 @@ import { parseSync, Visitor, type ESTree } from "vite";
 
 /** Dependencias locales permitidas; los paquetes externos los comprueban TypeScript y el lockfile. */
 const allowed: Record<string, readonly string[]> = {
-  main: ["Root", "types", "styles"],
+  // lib: el nonce de la CSP (lib/csp) se prepara antes de montar React.
+  main: ["Root", "lib", "types", "styles"],
   "entry-server": ["Root", "site", "types"],
   Root: ["App", "providers", "types"],
   App: ["features", "layout", "sections", "ui", "providers", "hooks", "site"],

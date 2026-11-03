@@ -10,11 +10,26 @@ const editor = (ruta) => new URL(ruta, adminURL).href;
 const sitio = (ruta) => new URL(ruta, baseURL).href;
 const escribir = (locator, texto) => (teclado ? locator.pressSequentially(texto, { delay: teclado }) : locator.fill(texto));
 
+/**
+ * Lo que comprueba una contraseña espera a la respuesta del servidor, no a un tiempo fijo: Argon2id de 64 MiB
+ * se calcula de uno en uno (app/src/auth/passwords.ts) con media CPU, y con muchos escenarios en paralelo los
+ * inicios de sesión hacen cola. El límite es el del escenario; después, la interfaz se comprueba como siempre.
+ */
+async function pulsarYEsperar(page, boton, ruta, { oAvisoLocal = false } = {}) {
+  const esperas = [page.waitForResponse((r) => r.request().method() === "POST" && new URL(r.url()).pathname === ruta, { timeout: 0 })];
+  // Lo que el propio panel rechaza (p. ej. una contraseña corta) no llega al servidor: basta con su aviso.
+  if (oAvisoLocal) esperas.push(page.locator('form [aria-invalid="true"]').first().waitFor({ timeout: 0 }));
+  // La espera que no gana se descarta al cerrar la página: sin rechazos sin atender.
+  for (const espera of esperas) espera.catch(() => {});
+  await page.getByRole("button", { name: boton }).click();
+  await Promise.race(esperas);
+}
+
 async function entrar(page, { email, password }) {
   await page.goto(editor("/entrar"));
   await escribir(page.getByLabel("Correo"), email);
   await escribir(page.getByLabel("Contraseña", { exact: true }), password);
-  await page.getByRole("button", { name: "Entrar" }).click();
+  await pulsarYEsperar(page, "Entrar", "/api/auth/login");
 }
 
 // ── Acceso ───────────────────────────────────────────────────────
@@ -98,7 +113,7 @@ When("intento cambiar mi contraseña por {string}", async ({ page, ctx }, nueva)
   await escribir(page.getByLabel("Contraseña actual", { exact: true }), ctx.cuenta.password);
   await escribir(page.getByLabel("Contraseña nueva", { exact: true }), nueva);
   await escribir(page.getByLabel("Repite la contraseña nueva", { exact: true }), nueva);
-  await page.getByRole("button", { name: "Cambiar la contraseña" }).click();
+  await pulsarYEsperar(page, "Cambiar la contraseña", "/api/auth/password", { oAvisoLocal: true });
 });
 
 Then("puedo entrar con la contraseña nueva", async ({ page, ctx }) => {
@@ -112,7 +127,7 @@ When("cambio mi contraseña", async ({ page, ctx }) => {
   await escribir(page.getByLabel("Contraseña actual", { exact: true }), ctx.cuenta.password);
   await escribir(page.getByLabel("Contraseña nueva", { exact: true }), ctx.nueva);
   await escribir(page.getByLabel("Repite la contraseña nueva", { exact: true }), ctx.nueva);
-  await page.getByRole("button", { name: "Cambiar la contraseña" }).click();
+  await pulsarYEsperar(page, "Cambiar la contraseña", "/api/auth/password");
   await expect(page.getByRole("status").filter({ hasText: "Contraseña cambiada" })).toBeVisible();
 });
 

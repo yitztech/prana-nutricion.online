@@ -1009,8 +1009,10 @@ Lo específico de este repositorio: comandos de verificación, convenciones prop
   (ataque repartido). Un aviso de bloqueo por cuenta y hora como máximo.
   Imágenes subidas: de hasta 25 megapíxeles, medidas en la cabecera antes de decodificarlas y procesadas de una
   en una (sharp sin caché y con un hilo), para no superar el `mem_limit` de `app`.
-  CSP: el sitio público sin `'unsafe-inline'` ni imágenes de otros dominios; el editor conserva
-  `style-src 'unsafe-inline'` porque Radix y Tiptap insertan `<style>` al ejecutarse.
+  CSP sin `'unsafe-inline'` en el sitio ni en el editor: los `<style>` que Radix y Tiptap insertan al ejecutarse
+  llevan un nonce que el gateway pone en cada respuesta HTML (`gateway/snippets/csp-nonce.conf`,
+  `web/src/lib/csp.ts`, que también pone zod sin `eval`); por eso el HTML va sin `ETag`. Los escenarios fallan ante cualquier infracción de
+  la CSP (fixture `cspInfracciones`), salvo el aviso que WebKit da por su propio menú de `<select>`.
 
 - **Reserva directa**: `BookingLink` (Button de shadcn con `asChild`) usa enlaces nativos a WhatsApp desde
   `web/src/lib/booking.js`, sin exigir el formulario ni depender de JavaScript. Nunca mostrar una reserva

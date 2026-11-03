@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Prose } from "@/components/ui/prose";
 import { Surface, surfaceVariants } from "@/components/ui/surface";
 import { Text } from "@/components/ui/typography";
+import { cspNonce } from "@/lib/csp";
 import { cn } from "@/lib/utils";
 
 const extensions = [
@@ -35,6 +36,8 @@ export function RichTextField({ label, value, onChange, error }: { label: string
   const id = useId();
   const editor = useEditor({
     extensions,
+    // Tiptap inserta sus estilos base en un <style>: con el nonce de la CSP (lib/csp.ts).
+    injectNonce: cspNonce,
     content: value,
     immediatelyRender: true,
     editorProps: {

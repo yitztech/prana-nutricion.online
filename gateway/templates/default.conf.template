@@ -51,13 +51,23 @@ server {
     location ^~ /admin {
         include /etc/nginx/snippets/proxy-headers.conf;
         include /etc/nginx/snippets/security-headers.conf;
+        include /etc/nginx/snippets/csp-nonce.conf;
         rewrite ^ /.no-existe break;
         proxy_pass http://web_upstream;
     }
 
+    # Recursos con huella e imágenes: sin tocar el cuerpo y con sus validadores de caché.
+    location ~ ^/(assets|img|uploads)/ {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        include /etc/nginx/snippets/security-headers.conf;
+        proxy_pass http://web_upstream;
+    }
+
+    # Páginas: nonce de la CSP (csp-nonce.conf) y, si está activada, la analítica.
     location / {
         include /etc/nginx/snippets/proxy-headers.conf;
         include /etc/nginx/snippets/security-headers.conf;
+        include /etc/nginx/snippets/csp-nonce.conf;
         include /tmp/nginx/snippets/analytics*.conf;
         proxy_pass http://web_upstream;
     }
@@ -114,6 +124,7 @@ server {
     location / {
         include /etc/nginx/snippets/proxy-headers.conf;
         include /etc/nginx/snippets/admin-headers.conf;
+        include /etc/nginx/snippets/csp-nonce.conf;
         proxy_pass http://web_upstream/admin/;
     }
 }
